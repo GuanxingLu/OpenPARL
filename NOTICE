@@ -1,0 +1,22 @@
+OpenPARL
+Copyright 2026 Guanxing Lu
+
+This product is a research reproduction of Kimi K2.5 Agent Swarm (PARL),
+arXiv:2602.02276 (Kimi Team, 2026). It is not an official Kimi or Moonshot
+product, and carries no endorsement from the paper authors.
+
+OpenPARL incorporates code from:
+
+  * miles (Apache License 2.0)
+    https://github.com/radixark/miles
+    Used as the training framework. OpenPARL's installer pulls a specific
+    fork with PARL-specific hooks:
+    https://github.com/GuanxingLu/miles/tree/openparl-v1
+
+  * slime (Apache License 2.0)
+    https://github.com/THUDM/slime
+    Upstream project from which miles was forked.
+
+  * RLinf (see third_party/rag_server/CREDITS.md for license)
+    https://github.com/RLinf/RLinf
+    Vendored RAG server (local retrieval + qdrant encoder + index builder).
