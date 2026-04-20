@@ -1,8 +1,8 @@
 """Async HTTP client for the local RAG server (Qdrant + E5 + webpage store).
 
 The server is the one launched by
-``examples/parl_v2/widesearch/launch_rag_server.sh``; its sources live in
-``examples/parl_v2/widesearch/rag_server/`` (vendored from RLinf's
+``openparl/widesearch/launch_rag_server.sh``; its sources live in
+``openparl/widesearch/rag_server/`` (vendored from RLinf's
 ``examples/agent/tools/search_local_server_qdrant/``, Apache-2.0). It exposes:
 
 - ``POST /retrieve``: `{queries: [str], topk: int}` →

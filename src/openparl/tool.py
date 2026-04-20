@@ -10,9 +10,9 @@ Holds:
   block.
 
 The actual subagent inference (``assign_task``) is environment-specific and
-lives under ``examples/parl_v2/<env>/assign_task.py::call``. The impl path
+lives under ``openparl/<env>/assign_task.py::call``. The impl path
 is loaded by ``generate.py`` at startup via ``--assign-task-impl-path``
-(default resolved in ``run_parl_v2.py`` from ``--env``).
+(default resolved in ``openparl.run`` from ``--env``).
 """
 
 import re

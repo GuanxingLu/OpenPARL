@@ -12,10 +12,10 @@ sleep 3
 ray stop --force
 pkill -9 ray
 # Targeted python kill so we don't clobber the long-running RAG server.
-pkill -9 -f 'ray::\|train\.py\|parl_v2\|run_parl_v2' || true
+pkill -9 -f 'ray::\|train\.py\|openparl' || true
 sleep 3
 pkill -9 ray
-pkill -9 -f 'ray::\|train\.py\|parl_v2\|run_parl_v2' || true
+pkill -9 -f 'ray::\|train\.py\|openparl' || true
 
 set -ex
 
@@ -27,11 +27,11 @@ NVLINK_COUNT=$(nvidia-smi | grep -o "NVLink" | wc -l)
 if [ "$NVLINK_COUNT" -gt 0 ]; then HAS_NVLINK=1; else HAS_NVLINK=0; fi
 echo "HAS_NVLINK: $HAS_NVLINK (detected $NVLINK_COUNT NVLink references)"
 
-export WANDB_API_KEY=${WANDB_API_KEY:-local-82cbbacfe8e3c0c527da528160bd76a1e85c9fea}
-export WANDB_BASE_URL=${WANDB_BASE_URL:-http://33.180.4.104}
+export WANDB_API_KEY=${WANDB_API_KEY:?must be set — see docs/reproducibility.md}
+export WANDB_BASE_URL=${WANDB_BASE_URL:-https://api.wandb.ai}
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-REPO_DIR="$(cd -- "${SCRIPT_DIR}/../../.." &>/dev/null && pwd)"
+REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
 
 DEV_REPO_DIR=${DEV_REPO_DIR:-${REPO_DIR}}
 DATA_ROOT=${DATA_ROOT:-${DEV_REPO_DIR}/DATA}
@@ -41,11 +41,11 @@ NUM_GPUS=$(echo "${CUDA_VISIBLE_DEVICES}" | awk -F',' '{print NF}')
 RUN_ID=${RUN_ID:-"run_$(date +%Y%m%d_%H%M%S)"}
 
 # widesearch-specific env vars consumed by widesearch/assign_task.py AND
-# widesearch/orchestrator_tools.py (both read MILES_PARL_V2_RAG_SERVER).
-export MILES_PARL_V2_RAG_SERVER=${MILES_PARL_V2_RAG_SERVER:-localhost:8000}
-export MILES_PARL_V2_SUBAGENT_MAX_TURNS=${MILES_PARL_V2_SUBAGENT_MAX_TURNS:-8}
-export MILES_PARL_V2_SUBAGENT_MAX_TOOLCALLS=${MILES_PARL_V2_SUBAGENT_MAX_TOOLCALLS:-10}
-export MILES_PARL_V2_SUBAGENT_CONCURRENCY=${MILES_PARL_V2_SUBAGENT_CONCURRENCY:-32}
+# widesearch/orchestrator_tools.py (both read OPENPARL_RAG_SERVER).
+export OPENPARL_RAG_SERVER=${OPENPARL_RAG_SERVER:-localhost:8000}
+export OPENPARL_SUBAGENT_MAX_TURNS=${OPENPARL_SUBAGENT_MAX_TURNS:-8}
+export OPENPARL_SUBAGENT_MAX_TOOLCALLS=${OPENPARL_SUBAGENT_MAX_TOOLCALLS:-10}
+export OPENPARL_SUBAGENT_CONCURRENCY=${OPENPARL_SUBAGENT_CONCURRENCY:-32}
 
 MODEL_ARGS=(
    --env widesearch
@@ -121,7 +121,7 @@ export MILES_SCRIPT_EXTERNAL_RAY=1
 # the frozen-SGLang pool declared in sglang_config_4B.yaml.
 SUBAGENT_MODE=${SUBAGENT_MODE:-frozen}
 if [ "$SUBAGENT_MODE" = "frozen" ]; then
-   SGLANG_EXTRA_ARGS=(--sglang-config examples/parl_v2/sglang_config_4B.yaml)
+   SGLANG_EXTRA_ARGS=(--sglang-config openparl/sglang_config_4B.yaml)
 elif [ "$SUBAGENT_MODE" = "shared" ]; then
    SGLANG_EXTRA_ARGS=()
 else
@@ -129,7 +129,7 @@ else
    exit 1
 fi
 
-python examples/parl_v2/run_parl_v2.py \
+python -m openparl.run \
    ${MODEL_ARGS[@]} \
    ${RUN_ARGS[@]} \
    ${PARALLEL_ARGS[@]} \

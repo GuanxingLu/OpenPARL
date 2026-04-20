@@ -4,7 +4,7 @@
 # same router cluster:
 #   - actor:    live policy, receives RL weight updates
 #   - subagent: frozen at args.hf_checkpoint (true hard-frozen),
-#               called by examples.parl_v2.tool.assign_task
+#               called by openparl.tool.assign_task
 #
 # ORDER MATTERS: the FIRST model listed under sglang: becomes the
 # default/live router — miles sets args.sglang_router_ip/port from it

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from examples.parl_v2.widesearch.reward_utils import compute_eval_metrics
+from openparl.widesearch.reward_utils import compute_eval_metrics
 
 
 def _md(rows: list[list[str]]) -> str:

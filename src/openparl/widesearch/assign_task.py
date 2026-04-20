@@ -9,11 +9,11 @@ budget.
 
 Environment variables drive the RAG endpoint and the subagent budgets:
 
-- ``MILES_PARL_V2_RAG_SERVER``         default ``localhost:8000``
-- ``MILES_PARL_V2_SUBAGENT_MAX_TURNS`` default ``8``   (generation calls per subagent)
-- ``MILES_PARL_V2_SUBAGENT_MAX_TOOLCALLS`` default ``10`` (total tool_calls per subagent)
-- ``MILES_PARL_V2_SUBAGENT_MAX_NEW_TOKENS`` default ``1024`` (per generation call)
-- ``MILES_PARL_V2_SUBAGENT_CONCURRENCY`` default ``16`` (semaphore across subagents)
+- ``OPENPARL_RAG_SERVER``         default ``localhost:8000``
+- ``OPENPARL_SUBAGENT_MAX_TURNS`` default ``8``   (generation calls per subagent)
+- ``OPENPARL_SUBAGENT_MAX_TOOLCALLS`` default ``10`` (total tool_calls per subagent)
+- ``OPENPARL_SUBAGENT_MAX_NEW_TOKENS`` default ``1024`` (per generation call)
+- ``OPENPARL_SUBAGENT_CONCURRENCY`` default ``16`` (semaphore across subagents)
 
 They're read lazily so the launch script can set them without touching
 miles' CLI schema.
@@ -47,7 +47,7 @@ _tool_call_parser = None  # lazy
 def _get_semaphore() -> asyncio.Semaphore:
     global _solver_semaphore
     if _solver_semaphore is None:
-        limit = int(os.environ.get("MILES_PARL_V2_SUBAGENT_CONCURRENCY", "16"))
+        limit = int(os.environ.get("OPENPARL_SUBAGENT_CONCURRENCY", "16"))
         _solver_semaphore = asyncio.Semaphore(limit)
     return _solver_semaphore
 
@@ -107,12 +107,12 @@ async def call(params: dict, *, registry: dict[str, str], tokenizer, router_url:
     if agent not in registry:
         return f"Error: agent '{agent}' not found. Call create_subagent first.", False, 0
 
-    server_addr = os.environ.get("MILES_PARL_V2_RAG_SERVER", "localhost:8000")
-    max_turns = int(os.environ.get("MILES_PARL_V2_SUBAGENT_MAX_TURNS", "8"))
-    max_tool_calls = int(os.environ.get("MILES_PARL_V2_SUBAGENT_MAX_TOOLCALLS", "10"))
-    max_new_tokens = int(os.environ.get("MILES_PARL_V2_SUBAGENT_MAX_NEW_TOKENS", "1024"))
-    access_max_chars = int(os.environ.get("MILES_PARL_V2_SUBAGENT_ACCESS_CHARS", "5000"))
-    temperature = float(os.environ.get("MILES_PARL_V2_SUBAGENT_TEMPERATURE", "1.0"))
+    server_addr = os.environ.get("OPENPARL_RAG_SERVER", "localhost:8000")
+    max_turns = int(os.environ.get("OPENPARL_SUBAGENT_MAX_TURNS", "8"))
+    max_tool_calls = int(os.environ.get("OPENPARL_SUBAGENT_MAX_TOOLCALLS", "10"))
+    max_new_tokens = int(os.environ.get("OPENPARL_SUBAGENT_MAX_NEW_TOKENS", "1024"))
+    access_max_chars = int(os.environ.get("OPENPARL_SUBAGENT_ACCESS_CHARS", "5000"))
+    temperature = float(os.environ.get("OPENPARL_SUBAGENT_TEMPERATURE", "1.0"))
 
     system_prompt = registry[agent] + SUBAGENT_OUTPUT_SUFFIX + SUBAGENT_REACT_SUFFIX
     messages = [

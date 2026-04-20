@@ -25,7 +25,7 @@ sub-agent 10-tool-call + ~5000-char-per-access budget (Orchestrator
 needs it for sub-task granularity planning). Keep those numbers in
 sync whenever ``tool.py`` or ``widesearch/assign_task.py`` changes.
 
-``run_parl_v2.py`` selects which constant to load via
+``openparl.run`` selects which constant to load via
 ``--orchestrator-prompt-path`` based on ``--agent-mode``.
 """
 

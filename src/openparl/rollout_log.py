@@ -40,7 +40,7 @@ from miles.utils.metric_utils import compute_at_k_over_metrics, compute_rollout_
 
 # Metric names that are 0/1 by construction — pass@k (binary gate on `== 1`)
 # is meaningful here. Continuous metrics (item_f1, row_f1, token_f1) only get
-# avg@N / max@N. See examples/parl_v2/widesearch/reward_utils.compute_eval_metrics.
+# avg@N / max@N. See openparl/widesearch/reward_utils.compute_eval_metrics.
 _BINARY_EVAL_METRICS = frozenset({"em", "cover_em", "is_success"})
 
 # Keys logged with full 5-stat distribution (mean/std/p50/max/min).
@@ -272,7 +272,7 @@ def _compute_eval_metric_at_k(args, samples) -> dict[str, float]:
     """Paper-aligned Avg@N / Max@N / Pass@k per eval sub-metric.
 
     Expects per-sample dicts in ``metadata["eval_metrics"]`` (populated by
-    ``examples.parl_v2.widesearch.reward.compute_eval_metrics``). Emits
+    ``openparl.widesearch.reward.compute_eval_metrics``). Emits
     ``eval/<key>/<metric>/avg@N`` etc. via the outer log_dict.
     """
     streams = _collect_eval_metric_streams(samples)

@@ -234,12 +234,12 @@ async def generate(input: GenerateFnInput) -> GenerateFnOutput:
     global _logged_endpoint
     if not _logged_endpoint:
         mode = "frozen" if subagent_router_url != live_router_url else "shared (ablation)"
-        logger.info(f"[parl_v2] subagent mode: {mode}")
-        logger.info(f"[parl_v2] subagent router: {subagent_router_url}")
-        logger.info(f"[parl_v2] live router:     {live_router_url}")
+        logger.info(f"[openparl] subagent mode: {mode}")
+        logger.info(f"[openparl] subagent router: {subagent_router_url}")
+        logger.info(f"[openparl] live router:     {live_router_url}")
         _logged_endpoint = True
     assert not args.partial_rollout, "Partial rollout is not supported"
-    assert not args.generate_multi_samples, "generate_multi_samples is not supported in parl_v2 custom multi-turn"
+    assert not args.generate_multi_samples, "generate_multi_samples is not supported in openparl custom multi-turn"
 
     url = f"http://{args.sglang_router_ip}:{args.sglang_router_port}/generate"
     tool_specs = load_function(args.generate_tool_specs_path)
@@ -332,7 +332,7 @@ def _add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--assign-task-impl-path",
         type=str,
-        default="examples.parl_v2.math.assign_task.call",
+        default="openparl.math.assign_task.call",
         help=(
             "Importable path to an async `call(params, *, registry, tokenizer, router_url)` "
             "function implementing the assign_task subagent inference. Math default is a "
@@ -346,7 +346,7 @@ def _add_arguments(parser: argparse.ArgumentParser):
         default=None,
         help=(
             "Importable path to the Orchestrator system prompt string. Unset "
-            "= the swarm-strict default in examples.parl_v2.prompts. "
+            "= the swarm-strict default in openparl.prompts. "
             "Swarm-paper sets ORCHESTRATOR_SYSTEM_PROMPT_PAPER; single-agent "
             "baseline sets ORCHESTRATOR_SYSTEM_PROMPT_SINGLE."
         ),
@@ -360,7 +360,7 @@ def _add_arguments(parser: argparse.ArgumentParser):
             "coroutine that handles Orchestrator-side direct tool calls (e.g., "
             "widesearch search/access). Unset = swarm-strict — Orchestrator "
             "holds only create_subagent / assign_task. For widesearch use "
-            "examples.parl_v2.widesearch.orchestrator_tools.dispatch."
+            "openparl.widesearch.orchestrator_tools.dispatch."
         ),
     )
     parser.add_argument(

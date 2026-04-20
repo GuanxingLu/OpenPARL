@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from examples.parl_v2.widesearch.reward_utils import (
+from openparl.widesearch.reward_utils import (
     _canonicalize_url,
     _cell_set,
     cell_equal,

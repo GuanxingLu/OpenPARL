@@ -3,7 +3,7 @@
 Assumes the raw datasets are already on disk under ``DATA/`` (user fetched
 from HF separately). Produces per-file ``*.miles.jsonl`` siblings with:
 
-- ``prompt``: the question / query text. Name matches run_parl_v2.py's
+- ``prompt``: the question / query text. Name matches openparl.run's
   hardcoded ``--input-key prompt``; widesearch-test's ``query`` and
   wideseek-r1-train's ``question`` both land here.
 - ``label`` = ``json.dumps({"answer": ..., "unique_columns": ... | None,
@@ -15,8 +15,8 @@ from HF separately). Produces per-file ``*.miles.jsonl`` siblings with:
 
 Usage::
 
-    python -m examples.parl_v2.widesearch.prepare_data
-    python -m examples.parl_v2.widesearch.prepare_data --force   # rebuild
+    python -m openparl.widesearch.prepare_data
+    python -m openparl.widesearch.prepare_data --force   # rebuild
 
 All paths resolve from the current working dir's ``DATA/`` unless
 ``--data-root`` is given.

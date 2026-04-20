@@ -23,7 +23,7 @@
 set -ex
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-REPO_DIR="$(cd -- "${SCRIPT_DIR}/../../.." &>/dev/null && pwd)"
+REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
 
 DATA_ROOT=${DATA_ROOT:-${REPO_DIR}/DATA}
 MODEL_ROOT=${MODEL_ROOT:-${REPO_DIR}/MODEL}

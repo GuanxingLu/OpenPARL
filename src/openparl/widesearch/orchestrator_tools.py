@@ -25,7 +25,7 @@ Three tool-spec sets:
 returns the tool-response string, or ``None`` for any name this
 dispatcher does not handle (so ``generate.py`` falls through to its
 unknown-tool error path). The RAG server address is read from
-``MILES_PARL_V2_RAG_SERVER`` (matching ``widesearch/assign_task.py``),
+``OPENPARL_RAG_SERVER`` (matching ``widesearch/assign_task.py``),
 so ``generate.py`` stays env-agnostic and the launcher just exports the
 env var once.
 """
@@ -39,7 +39,7 @@ from . import search_client
 from .subagent_prompts import tool_specs as _search_access_tool_specs
 
 DEFAULT_ACCESS_MAX_CHARS = 5000
-_RAG_SERVER_ENV = "MILES_PARL_V2_RAG_SERVER"
+_RAG_SERVER_ENV = "OPENPARL_RAG_SERVER"
 _RAG_SERVER_DEFAULT = "localhost:8000"
 
 tool_specs_swarm = list(_orch_swarm_tool_specs)

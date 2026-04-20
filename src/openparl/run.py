@@ -1,15 +1,9 @@
-"""PARL v2 launcher (retool_v2 style).
+"""OpenPARL launcher.
 
-Wraps train.py with the PARL v2 args (orchestrator with `create_subagent` +
-`assign_task` agent-swarm tools). Mirrors examples/retool_v2/run_retool_multi_turn.py —
-the .sh launchers in this folder are thin shells that invoke this script.
-
-NOTE on PYTHONPATH: parl_v2 only lives in the dev tree
-(/workspace/miles/examples/...), not in the baked-in /root/miles. To make
-`import examples.parl_v2.*` resolve correctly we pass an absolute
-train_script under the dev tree — `python3 <abs>/train.py` puts that
-directory at sys.path[0], shadowing both /root/miles and Megatron's own
-`examples` package.
+Wraps miles's `train.py` with the OpenPARL args (Orchestrator with
+`create_subagent` + `assign_task` agent-swarm tools). Launchers under
+`scripts/` are thin shells that set env vars and invoke this module via
+`python -m openparl.run`.
 """
 
 import os
@@ -23,9 +17,12 @@ import typer
 
 import miles.utils.external_utils.command_utils as U
 
-WANDB_PROJECT = "miles-dev-multi-agent"
+WANDB_PROJECT = "openparl"
 
-DEFAULT_DEV_REPO_DIR = "/workspace/miles"
+DEFAULT_DEV_REPO_DIR = os.environ.get(
+    "OPENPARL_DEV_REPO_DIR",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)),
+)
 
 _MODEL_DEFAULTS = {
     "qwen3-4B": {
@@ -60,7 +57,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
     num_gpus_per_node: int | None = None
     model: Literal["qwen3-4B", "qwen3-0.6B", "qwen3-30B-A3B"] = "qwen3-0.6B"
     # Selects the environment-specific reward / assign_task implementation.
-    # Each env lives under examples/parl_v2/<env>/ with reward.py + assign_task.py.
+    # Each env lives under openparl/<env>/ with reward.py + assign_task.py.
     env: Literal["math", "widesearch"] = "math"
     dev_repo_dir: str = DEFAULT_DEV_REPO_DIR
     save_path: str = ""
@@ -106,7 +103,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
     #                  ``search`` / ``access`` (no subagent). Math →
     #                  strips the entire PARL v2 layer and runs plain
     #                  single-turn GRPO against rm-type=deepscaler (the
-    #                  isolated-variable baseline for parl_v2/math).
+    #                  isolated-variable baseline for openparl/math).
     agent_mode: Literal["swarm", "swarm-paper", "single-agent"] = "swarm"
     extra_args: str = ""
 
@@ -128,7 +125,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
         elif self.env == "widesearch":
             self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/wideseek-r1-train/hybrid_20k.miles.jsonl"
             # widesearch eval launchers pass multi-set --eval-prompt-data via --extra-args;
-            # leave this empty by default so run_parl_v2 skips its single-set expansion.
+            # leave this empty by default so openparl.run skips its single-set expansion.
         self.rollout_max_critical_steps = self.rollout_max_critical_steps or (2 * self.generate_max_turns)
         if not self.save_path:
             suffix_map = {
@@ -170,27 +167,27 @@ def prepare(args: ScriptArgs):
 
 
 _TOOL_SPECS_PATH = {
-    # Swarm-strict is literally examples.parl_v2.tool.tool_specs for both
+    # Swarm-strict is literally openparl.tool.tool_specs for both
     # envs; widesearch swarm-paper / single-agent re-compose via the
     # widesearch/orchestrator_tools.py module (which also carries the
     # direct dispatch coroutine).
-    ("math", "swarm"): "examples.parl_v2.tool.tool_specs",
-    ("widesearch", "swarm"): "examples.parl_v2.tool.tool_specs",
-    ("widesearch", "swarm-paper"): "examples.parl_v2.widesearch.orchestrator_tools.tool_specs_swarm_paper",
-    ("widesearch", "single-agent"): "examples.parl_v2.widesearch.orchestrator_tools.tool_specs_single",
+    ("math", "swarm"): "openparl.tool.tool_specs",
+    ("widesearch", "swarm"): "openparl.tool.tool_specs",
+    ("widesearch", "swarm-paper"): "openparl.widesearch.orchestrator_tools.tool_specs_swarm_paper",
+    ("widesearch", "single-agent"): "openparl.widesearch.orchestrator_tools.tool_specs_single",
 }
 
 _ORCHESTRATOR_PROMPT_PATH = {
     # swarm mode leaves this empty — generate.py falls back to the
     # ORCHESTRATOR_SYSTEM_PROMPT constant at runtime.
     "swarm": "",
-    "swarm-paper": "examples.parl_v2.prompts.ORCHESTRATOR_SYSTEM_PROMPT_PAPER",
-    "single-agent": "examples.parl_v2.prompts.ORCHESTRATOR_SYSTEM_PROMPT_SINGLE",
+    "swarm-paper": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_PAPER",
+    "single-agent": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_SINGLE",
 }
 
 # Env-specific direct-tool dispatchers. Math has none (no direct tools).
 _DIRECT_TOOLS_PATH = {
-    "widesearch": "examples.parl_v2.widesearch.orchestrator_tools.dispatch",
+    "widesearch": "openparl.widesearch.orchestrator_tools.dispatch",
 }
 
 
@@ -211,21 +208,21 @@ def execute(args: ScriptArgs):
         # Baseline: no orchestrator, no tools, no group reward — plain
         # single-turn GRPO against miles' built-in deepscaler rm. Relies on
         # --apply-chat-template so miles' default generate wraps the raw
-        # prompt string with the model's chat template (parl_v2 path does
-        # this itself inside examples.parl_v2.generate).
+        # prompt string with the model's chat template (openparl path does
+        # this itself inside openparl.generate).
         custom_args = "--rm-type deepscaler " "--apply-chat-template "
     else:
         tool_specs_path = _TOOL_SPECS_PATH[(args.env, args.agent_mode)]
         custom_args = (
-            "--custom-generate-function-path examples.parl_v2.generate.generate "
+            "--custom-generate-function-path openparl.generate.generate "
             f"--generate-tool-specs-path {tool_specs_path} "
             "--generate-tool-call-parser qwen25 "
             f"--generate-max-turns {args.generate_max_turns} "
-            f"--assign-task-impl-path examples.parl_v2.{args.env}.assign_task.call "
+            f"--assign-task-impl-path openparl.{args.env}.assign_task.call "
             "--log-multi-turn "
-            f"--custom-rm-path examples.parl_v2.{args.env}.reward.reward_func "
-            "--custom-rollout-log-function-path examples.parl_v2.rollout_log.log_rollout_data "
-            "--custom-eval-rollout-log-function-path examples.parl_v2.rollout_log.log_eval_rollout_data "
+            f"--custom-rm-path openparl.{args.env}.reward.reward_func "
+            "--custom-rollout-log-function-path openparl.rollout_log.log_rollout_data "
+            "--custom-eval-rollout-log-function-path openparl.rollout_log.log_eval_rollout_data "
             # --group-rm hands the full rollout group to reward_func, which is
             # required so it can group-normalize per-turn rewards and populate
             # sample.per_token_advantages for K2.5-style turn-level credit.
@@ -256,10 +253,10 @@ def execute(args: ScriptArgs):
         f"--sglang-router-port {args.sglang_router_port} "
     )
     if not is_math_single:
-        # --reward-key selects which field parl_v2.reward.reward_func writes
+        # --reward-key selects which field openparl.reward.reward_func writes
         # into sample.reward; --rollout-max-critical-steps is the K2.5
         # turn-budget cap. Both apply to every mode that goes through the
-        # parl_v2 custom path (including widesearch single-agent) — only
+        # openparl custom path (including widesearch single-agent) — only
         # the math deepscaler branch opts out.
         rollout_args += "--reward-key score " f"--rollout-max-critical-steps {args.rollout_max_critical_steps} "
 
@@ -289,7 +286,7 @@ def execute(args: ScriptArgs):
         "--eps-clip-high 0.28 "
     )
     if not is_math_single:
-        # icepop TIS is parl_v2's default multi-turn-friendly correction.
+        # icepop TIS is openparl's default multi-turn-friendly correction.
         # The math deepscaler baseline is single-turn GRPO, so leaving TIS
         # off there avoids confounding multi-agent vs single-agent with a
         # second variable. Widesearch single-agent is still multi-turn
@@ -318,7 +315,7 @@ def execute(args: ScriptArgs):
     # flags match every miles 4B RL launcher — omitting them kept all 36 Qwen
     # layer activations live through backward. Launcher --extra-args can still
     # override any of these (argparse last-wins), which is how the 30B-A3B
-    # parl_v2 launcher bumps --expert-model-parallel-size to 8.
+    # openparl launcher bumps --expert-model-parallel-size to 8.
     perf_args = (
         f"--tensor-model-parallel-size {args.tensor_model_parallel_size} "
         "--sequence-parallel "
@@ -408,7 +405,7 @@ def execute(args: ScriptArgs):
         num_gpus_per_node=args.num_gpus_per_node,
         megatron_model_type=megatron_model_type,
         # Absolute dev-tree train.py: ensures sys.path[0]=/workspace/miles so
-        # `examples.parl_v2.*` imports resolve to the dev copy and not
+        # `openparl.*` imports resolve to the dev copy and not
         # the baked-in /root/miles or Megatron's own examples package.
         train_script=f"{args.dev_repo_dir}/train.py",
         before_ray_job_submit=_launch_router,
