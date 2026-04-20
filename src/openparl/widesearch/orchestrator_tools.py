@@ -1,6 +1,6 @@
 """Widesearch orchestrator-side direct-tool layer.
 
-Paper-faithful PARL v2 gives the Orchestrator ``search`` / ``access`` in
+Paper-faithful gives the Orchestrator ``search`` / ``access`` in
 addition to ``create_subagent`` / ``assign_task``. This module composes
 those tool-spec sets and exposes the single ``dispatch`` coroutine that
 ``generate.py`` routes "direct" (non-subagent) tool calls through.

@@ -1,22 +1,14 @@
-"""Widesearch assign_task impl: multi-turn ReAct subagent worker.
+"""Widesearch assign_task: multi-turn ReAct subagent against the RAG server.
 
-Topology Y from the design discussion: orchestrator keeps the single
-``create_subagent``/``assign_task`` tool pair (context stays sharded);
-each ``assign_task`` spawns one subagent here that runs a ReAct loop
-against the local RAG server (``search`` + ``access``) until it either
-produces a ``<result>…</result>`` block or exhausts its turn / tool-call
-budget.
+Each assign_task spawns one subagent that runs a ReAct loop (search +
+access) until it emits <result>...</result> or exhausts its budget.
 
-Environment variables drive the RAG endpoint and the subagent budgets:
-
-- ``OPENPARL_RAG_SERVER``         default ``localhost:8000``
-- ``OPENPARL_SUBAGENT_MAX_TURNS`` default ``8``   (generation calls per subagent)
-- ``OPENPARL_SUBAGENT_MAX_TOOLCALLS`` default ``10`` (total tool_calls per subagent)
-- ``OPENPARL_SUBAGENT_MAX_NEW_TOKENS`` default ``1024`` (per generation call)
-- ``OPENPARL_SUBAGENT_CONCURRENCY`` default ``16`` (semaphore across subagents)
-
-They're read lazily so the launch script can set them without touching
-miles' CLI schema.
+Environment variables (read lazily):
+  OPENPARL_RAG_SERVER             default localhost:8000
+  OPENPARL_SUBAGENT_MAX_TURNS     default 8
+  OPENPARL_SUBAGENT_MAX_TOOLCALLS default 10
+  OPENPARL_SUBAGENT_MAX_NEW_TOKENS default 1024
+  OPENPARL_SUBAGENT_CONCURRENCY   default 16
 """
 
 from __future__ import annotations

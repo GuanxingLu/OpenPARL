@@ -1,22 +1,11 @@
-"""Widesearch PARL v2 reward.
+"""Widesearch PARL reward.
 
-Same three-component PARL shape as ``math/reward.py``:
+score = r_perf + λ₁ · r_parallel + λ₂ · r_finish
 
-  score = r_perf + λ₁ · r_parallel + λ₂ · r_finish
-
-differences vs math:
-
-- ``r_perf`` is rule-based: ``item_f1`` over ``required_columns`` × rows
-  aligned by the ``unique_columns`` row-key when the label carries them
-  (WideSeek-R1 train / WideSearch eval); falls back to normalized EM on the
-  ASearcher QA benchmarks.
-- ``LAMBDA_BOX`` is gone (widesearch answers are markdown tables, not
-  ``\\boxed{…}``).
-- ``PARALLEL_CAP`` drops from 16 to 10 to match the WideSeek-R1 paper's
-  best-performing subagent count.
-
-Per-turn advantage decomposition + group-norm is the same as math and
-shares ``_fill_per_token_advantages``-shape logic.
+r_perf is rule-based item_f1 over (required_columns × rows), aligned by
+unique_columns row-key (WideSeek-R1 / WideSearch). Falls back to
+normalized EM on the ASearcher QA benchmarks. PARALLEL_CAP=10 per the
+WideSeek-R1 recipe; no \\boxed{...} term (widesearch answers are tables).
 """
 
 from __future__ import annotations

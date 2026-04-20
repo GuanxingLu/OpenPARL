@@ -1,25 +1,15 @@
-"""Rule-based metrics for the OpenPARL widesearch environment.
+"""Rule-based reward metrics for widesearch.
 
-Two reward heads, picked per-sample by reward.py:
+Two heads, picked per-sample by reward.py:
 
-- ``item_f1_from_markdown(response, answer, unique_columns, required_columns)``:
-  the main signal on WideSeek-R1 / WideSearch data. Both ``response`` and
-  ``answer`` carry a markdown table. Rows are aligned by the ``unique_columns``
-  row-key (set inner-join); for each matched row, every column in
-  ``required_columns`` is compared cell-by-cell via ``cell_equal`` and the F1
-  is computed over the (row × column) cell grid. ``required_columns`` defaults
-  to the full GT header. This mirrors the paper's item-F1 formula but keeps
-  non-key cell comparison rule-based — URL/multi-value canonicalizers cover
-  the bulk of format jitter; semantic equivalence that would require an LLM
-  judge is deliberately NOT attempted here (low FP > high recall).
+- item_f1_from_markdown(response, answer, unique_columns, required_columns):
+  the main signal on WideSeek-R1 / WideSearch. Aligns rows of two markdown
+  tables by the unique_columns row-key (set inner-join), then computes F1
+  over the (matched-row × required_column) cell grid via cell_equal.
+- em_score(response, answer): normalized exact-match for the ASearcher QA
+  benchmarks. Answers are expected in <answer>...</answer> or \\boxed{...}.
 
-- ``em_score(response, answer)``: normalized exact-match used on the
-  ASearcher QA benchmarks (HotpotQA / 2Wiki / NQ / …). The model's final
-  answer is expected either inside ``\\boxed{}`` or inside a
-  ``<answer>…</answer>`` block; we search both, then EM against the GT.
-
-Both helpers are sync / pure / side-effect-free so they can run inside the
-reward hot path without async plumbing.
+Both helpers are sync / pure / side-effect-free.
 """
 
 from __future__ import annotations
