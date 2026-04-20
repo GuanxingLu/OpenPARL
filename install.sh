@@ -2,8 +2,7 @@
 # Install OpenPARL inside the official miles container.
 #
 # Prereq: you are inside a running `radixark/miles:latest` container (or a
-# pinned tag — see docs/reproducibility.md for the exact version used for
-# the headline blog numbers). This script:
+# pinned tag). This script:
 #   1. Overlays the 4 PARL framework hooks on top of the image's miles
 #      install via a `pip install --no-deps --force-reinstall` from the
 #      GuanxingLu/miles@v0.1-openparl tag. `--no-deps` keeps the image's
@@ -34,5 +33,4 @@ OpenPARL installed. Next steps:
        bash scripts/launch_rag_server.sh
   2. Run the WideSearch training:
        bash scripts/run-qwen3-4B-parl.sh
-  See docs/reproducibility.md for hardware / environment details.
 EOF

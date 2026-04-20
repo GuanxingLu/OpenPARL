@@ -27,7 +27,7 @@ NVLINK_COUNT=$(nvidia-smi | grep -o "NVLink" | wc -l)
 if [ "$NVLINK_COUNT" -gt 0 ]; then HAS_NVLINK=1; else HAS_NVLINK=0; fi
 echo "HAS_NVLINK: $HAS_NVLINK (detected $NVLINK_COUNT NVLink references)"
 
-export WANDB_API_KEY=${WANDB_API_KEY:?must be set — see docs/reproducibility.md}
+export WANDB_API_KEY=${WANDB_API_KEY:?must be set}
 export WANDB_BASE_URL=${WANDB_BASE_URL:-https://api.wandb.ai}
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
