@@ -1,33 +1,9 @@
-"""PARL v2 custom rollout logger (agent-swarm flavor).
+"""Rollout logger for the agent-swarm runs.
 
-Bolts two things onto miles' default wandb logging:
-
-1. Per-component reward stats. ``reward.py::reward_func`` returns a dict
-   (``r_perf``, ``r_parallel``, ``r_finish``, ``r_box``, ``n_assign``,
-   ``n_create``, ``n_valid``, ``registry_size``, ``critical_steps``,
-   ``lambda1/2/_box``) but miles only pipes ``args.reward_key=score`` to
-   wandb. We unpack and log mean/std/p50/max/min per key under
-   ``reward/<key>/…``.
-
-2. Agent-swarm multi-turn metrics. Each orchestrator turn is a
-   "spawn / create / answer" decision; we aggregate from
-   ``sample.metadata["turns"]`` and friends:
-     - ``assign_rate`` (any turn with n_assign > 0) and per-turn n_assign
-       distribution;
-     - ``turns_per_rollout`` = len(metadata["turns"]);
-     - ``effective_response_ratio`` (loss-mask coverage — drops if subagent
-       observation tokens leak into loss);
-     - ``n_assign`` / ``r_parallel`` within-group std averaged across prompts
-       — the single hardest check that GRPO advantages on dispatch are
-       non-degenerate (see plan §"风险与对策");
-     - assign-by-difficulty: bucket prompts by group r_perf pass rate and
-       report mean ``n_assign`` per bucket — direct proxy for "learned
-       scheduling";
-     - ``n_unique_agents_used`` per rollout (distinct agent names appearing
-       in valid assign_task calls, approximated as ``registry_size``);
-     - ``solver_success_rate`` = Σ n_valid / Σ n_assign.
-
-Returns False so miles' default logger still runs after this hook.
+Adds per-component reward stats (r_perf / r_parallel / r_finish / λ) and
+multi-turn metrics (assign_rate, n_assign distribution, solver_success_rate,
+within-group std of n_assign) on top of miles' default wandb logger.
+Returns False so the default logger still runs.
 """
 
 from __future__ import annotations
