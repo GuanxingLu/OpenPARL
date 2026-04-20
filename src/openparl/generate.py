@@ -1,31 +1,7 @@
-"""PARL v2 custom multi-turn generate (agent-swarm + turn-based critical_steps).
+"""Multi-turn rollout with create_subagent / assign_task.
 
-Extends miles' multi_turn.generate with:
-- orchestrator system prompt injection (loaded from
-  ``--orchestrator-prompt-path``; defaults to swarm-strict)
-- per-rollout subagent registry (``dict[name, system_prompt]``) closure-bound
-  into the tool dispatcher, so ``create_subagent`` / ``assign_task`` share state
-- custom parallel tool executor (replacing miles' serial ``execute_tool_calls``):
-  Phase 1 runs ``create_subagent`` inline (registry write, no inference);
-  Phase 2 gathers ``assign_task`` calls (cap ``MAX_CONCURRENT_ASSIGN``) and
-  optional direct-tool calls (cap ``MAX_CONCURRENT_DIRECT``) concurrently.
-  Direct dispatch is pluggable via ``--orchestrator-direct-tools-path``:
-  swarm-strict leaves it unset (Orchestrator can only delegate); swarm-paper
-  and single-agent point at an env-specific ``dispatch(name, params)``
-  coroutine (e.g., widesearch/orchestrator_tools.dispatch for search/access).
-- K2.5 PARL turn-based ``critical_steps``: each orchestrator turn costs 1, and
-  turns with ≥1 executed ``assign_task`` add ``max_i S_sub`` on top (S_sub=1
-  for single-shot subagents, ReAct depth for widesearch subagents). Direct
-  tool calls add no depth — they execute inside the orchestrator turn, already
-  covered by the leading 1. Running value on ``sample.metadata["critical_steps"]``.
-- structured per-turn stats for reward attribution:
-  ``sample.metadata["turns"] = [{n_create, n_assign, n_valid, n_search,
-  n_access, max_sub_steps, final}, ...]``
-- subagent SGLang router URL discovered via miles.get_model_url("subagent")
-  with auto-fallback to the live router when --sglang-config does not
-  declare a "subagent" model (= shared/ablation mode)
-
-Design: docs/superpowers/specs/2026-04-17-parl-v2-agent-swarm-alignment-design.md
+critical_steps advances by 1 per orchestrator turn, plus max_i S_sub_i
+on turns with >=1 assign_task (paper: S_main + max_i S_sub,i).
 """
 
 import argparse
@@ -217,9 +193,6 @@ async def generate(input: GenerateFnInput) -> GenerateFnOutput:
     args = input.args
     sample = deepcopy(input.sample)
 
-    # Load the Orchestrator system prompt. Defaults to the swarm-strict
-    # prompt; swarm-paper / single-agent launchers override via
-    # --orchestrator-prompt-path.
     orch_prompt = ORCHESTRATOR_SYSTEM_PROMPT
     if getattr(args, "orchestrator_prompt_path", None):
         orch_prompt = load_function(args.orchestrator_prompt_path)
@@ -244,8 +217,6 @@ async def generate(input: GenerateFnInput) -> GenerateFnOutput:
     tool_call_parser = create_tool_call_parser(tool_specs, args.generate_tool_call_parser)
     assign_task_impl = load_function(args.assign_task_impl_path)
 
-    # Optional direct-tool dispatcher (swarm-paper / single-agent). None =
-    # swarm-strict mode, Orchestrator has only subagent tools.
     direct_dispatch = None
     if getattr(args, "orchestrator_direct_tools_path", None):
         direct_dispatch = load_function(args.orchestrator_direct_tools_path)
@@ -303,13 +274,7 @@ async def generate(input: GenerateFnInput) -> GenerateFnOutput:
             direct_dispatch=direct_dispatch,
         )
         sample.metadata["turns"].append({**stats, "final": False})
-        # K2.5 critical steps: 1 (orchestrator turn) + max_i(S_sub_i). If no
-        # subagent spawned this turn, just 1. Math's single-shot subagents
-        # contribute S_sub=1 (matching legacy "2 if n_assign>0 else 1");
-        # widesearch's ReAct subagents contribute their real ReAct turn count.
-        # Direct search/access calls add no depth (S_sub=0) — they execute
-        # inside the orchestrator turn, so they are already covered by the
-        # leading ``1``. This matches paper: S_main^(t) + max_i S_sub,i^(t).
+        # critical_steps += 1 + (max_i S_sub,i if n_assign > 0 else 0)
         sample.metadata["critical_steps"] += 1 + (stats["max_sub_steps"] if stats["n_assign"] > 0 else 0)
 
         update_sample_with_tool_responses(sample, tool_messages, tokenizer=tokenizer)
