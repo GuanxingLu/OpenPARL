@@ -1,23 +1,21 @@
-# Two opposite phase transitions under the same RL signal
-
-*Reproducing Kimi K2.5's Agent Swarm on Qwen3-4B — a short note.*
+# Reproducing Kimi K2.5's Agent Swarm on Qwen3-4B
 
 Kimi K2.5 (Feb 2026, §3.1) warns about two failure modes when training a
 delegating Orchestrator with plain outcome reward:
 
 1. **Serial collapse** — the policy retreats to single-agent execution
-   because independent-subagent feedback is sparse/non-stationary.
+   because independent-subagent feedback is sparse / non-stationary.
 2. **Spurious parallelism** — the policy fires off arbitrarily many
    subagents to hack intermediate signals.
 
-The paper proposes a decoupled architecture and a `r_perf + λ₁·r_parallel
-+ λ₂·r_finish` reward to sidestep both. The paper does **not** give
-closed-form formulas for `r_parallel` / `r_finish`, nor the annealing
-schedule.
+The paper proposes a decoupled architecture and a
+`r_perf + λ₁·r_parallel + λ₂·r_finish` reward to sidestep both. The
+paper does **not** give closed-form formulas for `r_parallel` /
+`r_finish`, nor the annealing schedule.
 
-I trained three Qwen3-4B RL runs that differ **only** in the orchestrator
-prompt + which tools are exposed. Everything else — optimizer, dataset,
-critic, rollout budget, GRPO config — is identical:
+I trained three Qwen3-4B RL runs that differ **only** in the
+orchestrator prompt + which tools are exposed. Everything else —
+optimizer, dataset, critic, rollout budget, GRPO config — is identical:
 
 | Run | Orchestrator prompt | Tools available |
 |---|---|---|
@@ -25,89 +23,73 @@ critic, rollout budget, GRPO config — is identical:
 | `orch-only`       | **default** prompt  | search / browse / python / `create_subagent` / `assign_task` |
 | `paper-config`    | K2.5 orchestrator prompt | search / browse / python / `create_subagent` / `assign_task` |
 
-## 1 · Same RL signal, opposite phase transitions
+## Behavior, schedule, and target task in one view
 
 ![phase transition](docs/assets/phase_transition.png)
 
-Same tool set. Different system prompt. Opposite phase transitions.
+**(a) Two opposite phase transitions, same tool set.** Both runs expose
+`create_subagent` + `assign_task`. With the K2.5 orchestrator prompt
+(teal), `assign_task` call rate climbs **0.03 → 1.00**. With the
+default prompt (orange), it decays **0.80 → 0.10** — RL actively
+*unlearns* delegation. This operationalizes K2.5's theoretical
+serial-collapse as a sub-100-step phase transition, driven by prompt
+rather than by the policy's tool inventory.
 
-- **paper-config** (green): `assign_task` rate climbs **0.03 → 1.00**.
-- **orch-only** (red): `assign_task` rate decays **0.80 → 0.10**. Starts
-  willing to delegate (because the tools are there), but RL actively
-  *unlearns* delegation under the default prompt.
+**(b) Collapsed policy also degenerates.** It isn't a harmless
+single-agent fallback. Truncation rate climbs to **23%** and
+repetition to **24%** on the default-prompt run; the paper-config run
+stays under **5%** on both. The policy slowly gives up on producing
+coherent outputs.
 
-In the paper config the three delegation statistics move in lockstep:
-`assign_rate` and `delegate_ratio` go to 1.0, `direct_tool_rate` drops
-from 0.79 to 0.02. The Orchestrator essentially stops calling tools
-itself and becomes a pure dispatcher.
+**(c) Paper run: plans widen and deepen.** Each evaluated episode
+eventually composes **~12 `assign_task` calls × ~11 `create_subagent`
+instantiations**, with critical-path length growing proportionally.
+The Orchestrator is not just calling `assign_task` more often — it
+composes larger, deeper plans to spread across frozen subagents.
 
-The serial-collapse run doesn't just give up delegation — it also
-decoheres. Truncation rate climbs from ~0 to **23%**, repetition from
-~0 to **24%**. The paper run stays under 5% on both. So the failure
-mode isn't "harmless single-agent fallback"; it's a policy slowly
-giving up on producing coherent outputs.
+**(d) Target task does not improve.** WideSearch item-F1 (the
+training reward's widesearch term) stays flat-to-down across all three
+runs, and `is_success = 1[item-F1 = 1.0] ≡ 0` the whole way. Two
+closable gaps explain this:
 
-This makes K2.5's theoretical serial-collapse an observable, <100-step
-phase transition — driven by prompt, not by the policy's tool inventory.
+- `rollout_max_critical_steps = 48` vs the paper's Appendix E.8 budget
+  of **100 orchestrator + 100 subagent** steps for WideSearch;
+- `examples/parl_v2/widesearch/reward.py` ships
+  `ANNEAL_FRAC = 100.0`, so `λ₁` and `λ₂` **never anneal** under the
+  planned rollout count. Pressure from `r_parallel + r_finish` stays
+  constant, and the policy meets it by hacking spawn count (`n_assign`
+  climbs to ~12/episode, `r_parallel` saturates at 0.70) while item-F1
+  on WideSearch actually drops **0.059 → 0.048**.
 
-## 2 · The Orchestrator learns to schedule
+The delegation dynamics reproduce cleanly. Closing the WideSearch gap
+needs a correct annealing schedule and a matching step budget — both
+are single-line changes in the launcher / reward file.
 
-![parallelism](docs/assets/parallelism.png)
-
-Zooming into the paper-config run: RL progressively shifts the
-Orchestrator from *doing* work to *scheduling* it. Token budget routed
-to `assign_task` grows from 2% to 99%; the Orchestrator's own direct
-tool calls collapse to 2%.
-
-At the same time, each episode's plan widens *and* deepens:
-`assign_task` and `create_subagent` calls per evaluated episode grow
-from roughly zero to 8-12, and the critical-path length grows
-proportionally. The Orchestrator is not just calling `assign_task` more
-often — it is composing bigger, deeper plans to spread across frozen
-subagents.
-
-This is the scheduler behavior K2.5's Figure 4 describes, reproduced
-cleanly on a 4B orchestrator with the paper's prompt and a critical-step
-budget.
-
-## 3 · Multi-agent > single-agent on held-out evals
+## Held-out multi-hop QA — ordering is stable across pass@K
 
 ![per-task eval grid](docs/assets/per_task_eval_grid.png)
 
-Held-out multi-hop QA (HotpotQA, 2WikiMultihop, Bamboogle) evaluated
-over training, with **EM (solid) and cover-EM (dashed) at pass@{1,2,4}**.
+EM (solid) and cover-EM (dashed) on HotpotQA, 2WikiMultihop, and
+Bamboogle at pass@{1, 2, 4}.
 
-- **paper-config (green) is clearly ahead on strict EM** across all
-  three benchmarks and all three pass levels. The swarm-trained
-  Orchestrator generalizes the delegation strategy to out-of-distribution
-  QA.
-- **Ordering is stable as pass@K widens.** At pass@4 the paper-config
-  EM reaches 0.30+ on all three benchmarks; orch-only and
-  single-baseline stay near 0.10.
-- **cover-EM narrows the gap.** Reported alongside for context; the
-  three runs land in similar cover-EM bands across the benchmarks.
-
-The architectural choice (delegate or don't) plus the prompt that
-stabilizes delegation dominates the RL signal on strict EM.
-
-## What's next
-
-The delegation dynamics reproduce cleanly. The open items are on the
-reward-shaping side:
-
-- **Anneal λ₁/λ₂.** The current `reward.py:ANNEAL_FRAC = 100.0` means
-  auxiliary terms never decay. Replacing with a proper schedule is the
-  smallest-delta next experiment.
-- **Critical-step budget 48 → 100+100.** Matches the paper's Appendix
-  E.8 for WideSearch; required before a fair final-benchmark number.
-- **Curriculum on subagent size.** Swap a smaller frozen subagent into
-  `configs/sglang_4B.yaml` and re-run to try the paper's curriculum.
+- **paper-config (teal) is clearly ahead on strict EM** across all
+  three benchmarks and all three pass levels. The ordering does not
+  invert as K grows, so this is not a pass@4 artifact — it's a
+  reproducible behavioral effect.
+- **cover-EM narrows the gap.** All three runs land in similar
+  cover-EM bands, suggesting that subagents already "know" the answer.
+  What the orchestrator learns under the paper prompt is to
+  **assemble and format** the final response precisely enough to match
+  strict EM.
+- **The default-prompt run underperforms single-agent on HotpotQA /
+  2Wiki cover-EM** — another symptom of the behavioral collapse
+  visible in panel (b) above.
 
 ---
 
-**Runs**: `pa9lipn3` (single), `tqzr8z9x` (orch-only), `gbamfgd3`
-(paper-config). All ran on 1× H200 × 8, Qwen3-4B Orchestrator +
-Qwen3-4B frozen Subagent, GRPO, ~80 updates. Reproduction launchers:
+**Runs**: All ran on 1× H200 × 8, Qwen3-4B
+Orchestrator + Qwen3-4B frozen Subagent, GRPO, ~80 updates.
+Reproduction launchers:
 [`scripts/run-qwen3-4B-{single,orchestrator_only,parl}.sh`](scripts/).
 
 **Reference:** Kimi Team, *Kimi K2.5: Visual Agentic Intelligence*,
