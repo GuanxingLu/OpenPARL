@@ -1,4 +1,4 @@
-"""Rule-based metrics for the widesearch PARL v2 environment.
+"""Rule-based metrics for the OpenPARL widesearch environment.
 
 Two reward heads, picked per-sample by reward.py:
 

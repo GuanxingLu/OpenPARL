@@ -27,11 +27,10 @@ import logging
 import os
 import uuid
 
-from openai.types.chat import ChatCompletionMessageToolCall
-from sglang.srt.function_call.core_types import ToolCallItem
-
 from miles.rollout.generate_utils.tool_call_utils import create_tool_call_parser
 from miles.utils.http_utils import post
+from openai.types.chat import ChatCompletionMessageToolCall
+from sglang.srt.function_call.core_types import ToolCallItem
 
 from ..tool import _RESULT_RE, SUBAGENT_OUTPUT_SUFFIX, extract_subagent_result
 from . import search_client

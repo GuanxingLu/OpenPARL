@@ -13,9 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Literal
 
-import typer
-
 import miles.utils.external_utils.command_utils as U
+import typer
 
 WANDB_PROJECT = "openparl"
 

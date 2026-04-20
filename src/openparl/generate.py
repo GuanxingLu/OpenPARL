@@ -35,9 +35,6 @@ import logging
 import uuid
 from copy import deepcopy
 
-from openai.types.chat import ChatCompletionMessageToolCall
-from sglang.srt.function_call.core_types import ToolCallItem
-
 from miles.rollout.base_types import GenerateFnInput, GenerateFnOutput
 from miles.rollout.generate_utils.generate_endpoint_utils import (
     compute_prompt_ids_from_sample,
@@ -49,6 +46,8 @@ from miles.rollout.sglang_rollout import get_model_url
 from miles.utils.http_utils import post
 from miles.utils.misc import load_function
 from miles.utils.types import Sample
+from openai.types.chat import ChatCompletionMessageToolCall
+from sglang.srt.function_call.core_types import ToolCallItem
 
 from .prompts import ORCHESTRATOR_SYSTEM_PROMPT
 from .tool import _create_subagent
@@ -191,8 +190,7 @@ async def _execute_tool_calls_parallel(
         )
     for i in denied_direct:
         results[i] = (
-            f"Error: too many direct tool calls in this turn "
-            f"(cap={MAX_CONCURRENT_DIRECT}). Retry in a later turn."
+            f"Error: too many direct tool calls in this turn " f"(cap={MAX_CONCURRENT_DIRECT}). Retry in a later turn."
         )
 
     for i, (name, _, _) in enumerate(normalized):

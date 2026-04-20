@@ -143,20 +143,6 @@ The PARL training recipe needs ~191 LOC of hooks in miles. They ship as
 | `feat(metrics): multi-agent pass@k + tool-call-parse-failure + paper-style @k` | Correct `pass_reward` accounting when rollout emits non-primary trajectories; false-tool-call rate; avg@N / max@N aggregators |
 | `feat(rollout): allow group_rm during eval for multi-agent rollouts` | Unblocks eval when the reward function sees the whole (Orchestrator + Subagent) group |
 
-## What's next
-
-Things I'm planning to run, in rough order of payoff:
-
-1. **λ₁/λ₂ anneal schedule.** `reward.py:ANNEAL_FRAC = 100.0` currently
-   means "never anneal"; replace with a proper anneal so auxiliary
-   terms decay on schedule.
-2. **Critical-step budget 48 → 100+100.** Align with paper Appendix
-   E.8 for WideSearch before running the final headline numbers.
-3. **Curriculum on Subagent size.** Paper trains Orchestrator against
-   smaller Subagents first, then scales up. Swap a smaller HF
-   checkpoint into the `subagent` server group in
-   `configs/sglang_4B.yaml` to try the asymmetric variant.
-
 ## License
 
 Apache-2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
