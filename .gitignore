@@ -20,3 +20,6 @@ saves/
 
 # Local-only helper scripts (plot generation from wandb, ad-hoc analysis).
 tools/
+
+# Local-only working directory (settings, specs, session state).
+.claude/
