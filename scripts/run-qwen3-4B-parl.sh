@@ -47,7 +47,6 @@ export OPENPARL_SUBAGENT_MAX_TOOLCALLS=${OPENPARL_SUBAGENT_MAX_TOOLCALLS:-10}
 export OPENPARL_SUBAGENT_CONCURRENCY=${OPENPARL_SUBAGENT_CONCURRENCY:-32}
 
 MODEL_ARGS=(
-   --env widesearch
    --model qwen3-4B
    --hf-checkpoint "${MODEL_ROOT}/Qwen3-4B"
    --ref-load "${MODEL_ROOT}/Qwen3-4B_torch_dist"
@@ -107,8 +106,7 @@ PERF_ARGS=(
 )
 
 # Override hardcoded optimizer defaults in openparl.run (weight_decay=0.1,
-# adam_beta2=0.98). Passed via --extra-args so argparse last-wins picks these
-# up without touching the shared launcher (keeps math runs untouched).
+# adam_beta2=0.98) via --extra-args (argparse last-wins).
 OPTIM_OVERRIDE_ARGS=(
    --weight-decay 0.01
    --adam-beta2 0.999
@@ -128,7 +126,8 @@ ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus ${NUM_GPUS} \
 export RAY_ADDRESS="http://127.0.0.1:${RAY_DASHBOARD_PORT}"
 export MILES_SCRIPT_EXTERNAL_RAY=1
 
-# See math/run-qwen3-4B-parl-v2.sh for SUBAGENT_MODE semantics (frozen vs shared).
+# SUBAGENT_MODE: 'frozen' carves a separate SGLang pool for the subagent
+# (via --sglang-config); 'shared' reuses the Orchestrator's pool.
 SUBAGENT_MODE=${SUBAGENT_MODE:-frozen}
 if [ "$SUBAGENT_MODE" = "frozen" ]; then
    SGLANG_EXTRA_ARGS=(--sglang-config openparl/sglang_config_4B.yaml)

@@ -1,6 +1,6 @@
 """OpenPARL launcher.
 
-Wraps miles's `train.py` with the OpenPARL args (Orchestrator with
+Wraps miles's `train.py` with OpenPARL args (Orchestrator with
 `create_subagent` + `assign_task` agent-swarm tools). Launchers under
 `scripts/` are thin shells that set env vars and invoke this module via
 `python -m openparl.run`.
@@ -48,22 +48,14 @@ class ScriptArgs(U.ExecuteTrainConfig):
     hardware: Literal["H100", "GB200", "GB300"] = "H100"
     num_gpus_per_node: int | None = None
     model: Literal["qwen3-4B", "qwen3-30B-A3B"] = "qwen3-4B"
-    # Selects the environment-specific reward / assign_task implementation.
-    # Each env lives under openparl/<env>/ with reward.py + assign_task.py.
-    env: Literal["math", "widesearch"] = "math"
     dev_repo_dir: str = DEFAULT_DEV_REPO_DIR
     save_path: str = ""
     prompt_data: str = ""
-    eval_prompt_data: str = ""
     generate_max_turns: int = 6
     rollout_max_context_len: int = 32768
     rollout_max_response_len: int = 4096
-    # K2.5 PARL episode-length budget in TURN units (not tokens):
-    #   phase_cost = 1 per orchestrator turn (final / create-only / length)
-    #              = 2 per spawn turn (≥1 executed assign_task, max_i S_sub=1
-    #                under single-shot subagents).
-    # Defaults to 2 * generate_max_turns (loose cap; main turn cap is
-    # --generate-max-turns).
+    # Episode-length budget in TURN units (not tokens). Default 2x generate_max_turns
+    # is a loose cap; the real turn cap is --generate-max-turns.
     rollout_max_critical_steps: int = 0
     rollout_batch_size: int = 8
     n_samples_per_prompt: int = 8
@@ -73,29 +65,18 @@ class ScriptArgs(U.ExecuteTrainConfig):
     sglang_router_ip: str = "127.0.0.1"
     sglang_router_port: int = 18765
     sglang_router_prometheus_port: int = 14444
-    # empty string means "use default for the selected model"
     hf_checkpoint: str = ""
     ref_load: str = ""
     megatron_model_type: str = ""
     tensor_model_parallel_size: int = 0
     rollout_num_gpus_per_engine: int = 0
-    # Optional path to a miles --sglang-config YAML. When set, miles carves
-    # the rollout pool into multiple SGLang models (used for the frozen
-    # subagent topology). Empty -> miles default single-model single-pool.
+    # Optional miles --sglang-config YAML for multi-model pools (frozen subagent).
     sglang_config: str = ""
-    # Three-way control over the Orchestrator tool surface:
-    #   swarm        : current default — Orchestrator holds only
-    #                  ``create_subagent`` + ``assign_task``. Delegation is
-    #                  architecturally forced.
-    #   swarm-paper  : paper-faithful — Orchestrator additionally holds
-    #                  direct ``search`` / ``access``. Delegation becomes
-    #                  a learned capability, motivated by context sharding.
-    #                  Widesearch-only (math has no direct tools).
-    #   single-agent : widesearch → Orchestrator holds only direct
-    #                  ``search`` / ``access`` (no subagent). Math →
-    #                  strips the entire delegation layer and runs plain
-    #                  single-turn GRPO against rm-type=deepscaler (the
-    #                  isolated-variable baseline for openparl/math).
+    # Orchestrator tool surface (see BLOG):
+    #                     direct tools   subagent tools
+    #   single-agent  —        ✓               ✗        (Single)
+    #   swarm         —        ✗               ✓        (Delegate-only / swarm-strict)
+    #   swarm-paper   —        ✓               ✓        (PARL)
     agent_mode: Literal["swarm", "swarm-paper", "single-agent"] = "swarm"
     extra_args: str = ""
 
@@ -107,17 +88,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
         self.megatron_model_type = self.megatron_model_type or defaults["megatron_model_type"]
         self.tensor_model_parallel_size = self.tensor_model_parallel_size or defaults["tensor_model_parallel_size"]
         self.rollout_num_gpus_per_engine = self.rollout_num_gpus_per_engine or defaults["rollout_num_gpus_per_engine"]
-        if self.env == "math" and self.agent_mode == "swarm-paper":
-            raise ValueError(
-                "agent_mode=swarm-paper is widesearch-only: math has no direct " "Orchestrator-side tools to expose."
-            )
-        if self.env == "math":
-            self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/dapo-math-17k/dapo-math-17k.jsonl"
-            self.eval_prompt_data = self.eval_prompt_data or f"{self.dev_repo_dir}/DATA/aime-2024/aime-2024.jsonl"
-        elif self.env == "widesearch":
-            self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/wideseek-r1-train/hybrid_20k.miles.jsonl"
-            # widesearch eval launchers pass multi-set --eval-prompt-data via --extra-args;
-            # leave this empty by default so openparl.run skips its single-set expansion.
+        self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/wideseek-r1-train/hybrid_20k.miles.jsonl"
         self.rollout_max_critical_steps = self.rollout_max_critical_steps or (2 * self.generate_max_turns)
         if not self.save_path:
             suffix_map = {
@@ -142,7 +113,7 @@ def _get_wandb_args(args: ScriptArgs) -> str:
     return (
         "--use-wandb "
         f"--wandb-project {WANDB_PROJECT} "
-        f"--wandb-group {args.model}-{variant}-{args.env} "
+        f"--wandb-group {args.model}-{variant} "
         f"--wandb-key {WANDB_API_KEY} "
     )
 
@@ -159,28 +130,19 @@ def prepare(args: ScriptArgs):
 
 
 _TOOL_SPECS_PATH = {
-    # Swarm-strict is literally openparl.tool.tool_specs for both
-    # envs; widesearch swarm-paper / single-agent re-compose via the
-    # widesearch/orchestrator_tools.py module (which also carries the
-    # direct dispatch coroutine).
-    ("math", "swarm"): "openparl.tool.tool_specs",
-    ("widesearch", "swarm"): "openparl.tool.tool_specs",
-    ("widesearch", "swarm-paper"): "openparl.widesearch.orchestrator_tools.tool_specs_swarm_paper",
-    ("widesearch", "single-agent"): "openparl.widesearch.orchestrator_tools.tool_specs_single",
+    "swarm": "openparl.tool.tool_specs",
+    "swarm-paper": "openparl.widesearch.orchestrator_tools.tool_specs_swarm_paper",
+    "single-agent": "openparl.widesearch.orchestrator_tools.tool_specs_single",
 }
 
 _ORCHESTRATOR_PROMPT_PATH = {
-    # swarm mode leaves this empty — generate.py falls back to the
-    # ORCHESTRATOR_SYSTEM_PROMPT constant at runtime.
+    # swarm: empty means generate.py falls back to ORCHESTRATOR_SYSTEM_PROMPT.
     "swarm": "",
     "swarm-paper": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_PAPER",
     "single-agent": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_SINGLE",
 }
 
-# Env-specific direct-tool dispatchers. Math has none (no direct tools).
-_DIRECT_TOOLS_PATH = {
-    "widesearch": "openparl.widesearch.orchestrator_tools.dispatch",
-}
+_DIRECT_TOOLS_DISPATCH = "openparl.widesearch.orchestrator_tools.dispatch"
 
 
 def execute(args: ScriptArgs):
@@ -194,39 +156,25 @@ def execute(args: ScriptArgs):
         f"--save-interval {2 if args.mode == 'debug_minimal' else 50} "
     )
 
-    is_math_single = args.env == "math" and args.agent_mode == "single-agent"
-
-    if is_math_single:
-        # Baseline: no orchestrator, no tools, no group reward — plain
-        # single-turn GRPO against miles' built-in deepscaler rm. Relies on
-        # --apply-chat-template so miles' default generate wraps the raw
-        # prompt string with the model's chat template (openparl path does
-        # this itself inside openparl.generate).
-        custom_args = "--rm-type deepscaler " "--apply-chat-template "
-    else:
-        tool_specs_path = _TOOL_SPECS_PATH[(args.env, args.agent_mode)]
-        custom_args = (
-            "--custom-generate-function-path openparl.generate.generate "
-            f"--generate-tool-specs-path {tool_specs_path} "
-            "--generate-tool-call-parser qwen25 "
-            f"--generate-max-turns {args.generate_max_turns} "
-            f"--assign-task-impl-path openparl.{args.env}.assign_task.call "
-            "--log-multi-turn "
-            f"--custom-rm-path openparl.{args.env}.reward.reward_func "
-            "--custom-rollout-log-function-path openparl.rollout_log.log_rollout_data "
-            "--custom-eval-rollout-log-function-path openparl.rollout_log.log_eval_rollout_data "
-            # --group-rm hands the full rollout group to reward_func, which is
-            # required so it can group-normalize per-turn rewards and populate
-            # sample.per_token_advantages for K2.5-style turn-level credit.
-            "--group-rm "
-        )
-        prompt_path = _ORCHESTRATOR_PROMPT_PATH[args.agent_mode]
-        if prompt_path:
-            custom_args += f"--orchestrator-prompt-path {prompt_path} "
-        # Direct-tool dispatcher only makes sense when the Orchestrator
-        # actually holds direct tools, i.e., swarm-paper or single-agent.
-        if args.agent_mode in ("swarm-paper", "single-agent") and args.env in _DIRECT_TOOLS_PATH:
-            custom_args += f"--orchestrator-direct-tools-path {_DIRECT_TOOLS_PATH[args.env]} "
+    custom_args = (
+        "--custom-generate-function-path openparl.generate.generate "
+        f"--generate-tool-specs-path {_TOOL_SPECS_PATH[args.agent_mode]} "
+        "--generate-tool-call-parser qwen25 "
+        f"--generate-max-turns {args.generate_max_turns} "
+        "--assign-task-impl-path openparl.widesearch.assign_task.call "
+        "--log-multi-turn "
+        "--custom-rm-path openparl.widesearch.reward.reward_func "
+        "--custom-rollout-log-function-path openparl.rollout_log.log_rollout_data "
+        "--custom-eval-rollout-log-function-path openparl.rollout_log.log_eval_rollout_data "
+        # --group-rm: reward_func needs the full group to normalize per-turn
+        # rewards and populate sample.per_token_advantages (turn-level credit).
+        "--group-rm "
+    )
+    prompt_path = _ORCHESTRATOR_PROMPT_PATH[args.agent_mode]
+    if prompt_path:
+        custom_args += f"--orchestrator-prompt-path {prompt_path} "
+    if args.agent_mode in ("swarm-paper", "single-agent"):
+        custom_args += f"--orchestrator-direct-tools-path {_DIRECT_TOOLS_DISPATCH} "
 
     rollout_args = (
         f"--prompt-data {args.prompt_data} "
@@ -243,24 +191,15 @@ def execute(args: ScriptArgs):
         "--balance-data "
         f"--sglang-router-ip {args.sglang_router_ip} "
         f"--sglang-router-port {args.sglang_router_port} "
+        "--reward-key score "
+        f"--rollout-max-critical-steps {args.rollout_max_critical_steps} "
     )
-    if not is_math_single:
-        # --reward-key selects which field openparl.reward.reward_func writes
-        # into sample.reward; --rollout-max-critical-steps is the K2.5
-        # turn-budget cap. Both apply to every mode that goes through the
-        # openparl custom path (including widesearch single-agent) — only
-        # the math deepscaler branch opts out.
-        rollout_args += "--reward-key score " f"--rollout-max-critical-steps {args.rollout_max_critical_steps} "
 
     eval_args = ""
     if args.mode != "debug_minimal":
-        # math's legacy single-set eval; widesearch passes its own multi-set
-        # --eval-prompt-data via --extra-args (and leaves eval_prompt_data empty).
-        eval_prompt_flag = f"--eval-prompt-data aime {args.eval_prompt_data} " if args.eval_prompt_data else ""
+        # Multi-set --eval-prompt-data is passed via --extra-args.
         eval_args = (
             "--eval-interval 20 "
-            # "--skip-eval-before-train "
-            f"{eval_prompt_flag}"
             "--n-samples-per-eval-prompt 4 "
             f"--eval-max-response-len {args.rollout_max_response_len} "
             f"--eval-max-context-len {args.rollout_max_context_len} "
@@ -276,14 +215,9 @@ def execute(args: ScriptArgs):
         f"--entropy-coef {args.entropy_coef} "
         "--eps-clip 0.2 "
         "--eps-clip-high 0.28 "
+        "--use-tis "
+        "--custom-tis-function-path miles.backends.training_utils.loss.icepop_function "
     )
-    if not is_math_single:
-        # icepop TIS is openparl's default multi-turn-friendly correction.
-        # The math deepscaler baseline is single-turn GRPO, so leaving TIS
-        # off there avoids confounding multi-agent vs single-agent with a
-        # second variable. Widesearch single-agent is still multi-turn
-        # (search → access → answer), so it keeps TIS like its swarm peers.
-        grpo_args += "--use-tis " "--custom-tis-function-path miles.backends.training_utils.loss.icepop_function "
 
     optimizer_args = (
         "--optimizer adam "
@@ -300,14 +234,9 @@ def execute(args: ScriptArgs):
     if args.sglang_config:
         sglang_args += f"--sglang-config {args.sglang_config} "
 
-    # Perf defaults mirror examples/retool_v2 and scripts/run-qwen3-4B.sh.
-    # --sequence-parallel halves LayerNorm/Dropout activation memory when TP>1
-    # and is required to keep long agentic rollouts from OOMing during loss
-    # (logits.clone() in ppo_utils.calculate_log_probs_and_entropy). Recompute
-    # flags match every miles 4B RL launcher — omitting them kept all 36 Qwen
-    # layer activations live through backward. Launcher --extra-args can still
-    # override any of these (argparse last-wins), which is how the 30B-A3B
-    # openparl launcher bumps --expert-model-parallel-size to 8.
+    # --sequence-parallel avoids OOM in loss (logits.clone) under long rollouts.
+    # --recompute-* avoids holding all layers live through backward. --extra-args
+    # can override any of these (argparse last-wins).
     perf_args = (
         f"--tensor-model-parallel-size {args.tensor_model_parallel_size} "
         "--sequence-parallel "
@@ -346,13 +275,10 @@ def execute(args: ScriptArgs):
         f"{args.extra_args} "
     )
 
-    # The assign_task tool needs to call back into SGLang during a
-    # rollout, so it must know the router address ahead of time. miles'
-    # _start_router skips its own launch when --sglang-router-ip is set, so
-    # we pre-launch the router ourselves on the same host:port. This must
-    # happen AFTER execute_train's `pkill -9 sglang` cleanup phase but
-    # BEFORE the ray job is submitted — the before_ray_job_submit hook
-    # gives us exactly that window.
+    # assign_task calls back into SGLang during rollouts, so the router must
+    # exist before the ray job starts. miles skips its own router launch when
+    # --sglang-router-ip is set, so we pre-launch it in before_ray_job_submit
+    # (runs after execute_train's sglang cleanup, before ray submit).
     def _launch_router():
         log_dir = f"{args.dev_repo_dir}/logs"
         os.makedirs(log_dir, exist_ok=True)
@@ -396,9 +322,7 @@ def execute(args: ScriptArgs):
         config=args,
         num_gpus_per_node=args.num_gpus_per_node,
         megatron_model_type=megatron_model_type,
-        # Absolute dev-tree train.py: ensures sys.path[0]=/workspace/miles so
-        # `openparl.*` imports resolve to the dev copy and not
-        # the baked-in /root/miles or Megatron's own examples package.
+        # Absolute path so sys.path[0] points at the dev tree, not /root/miles.
         train_script=f"{args.dev_repo_dir}/train.py",
         before_ray_job_submit=_launch_router,
         extra_env_vars={
@@ -406,22 +330,12 @@ def execute(args: ScriptArgs):
             "MILES_SGLANG_ROUTER_IP": args.sglang_router_ip,
             "MILES_SGLANG_ROUTER_PORT": str(args.sglang_router_port),
             "FLASHINFER_DISABLE_VERSION_CHECK": "1",
-            # Forward wandb config to worker-node actors. WANDB_API_KEY is
-            # also passed via --wandb-key, but WANDB_BASE_URL has no CLI
-            # equivalent — without forwarding it, actors on remote nodes
-            # default to wandb.ai and time out in egress-restricted envs.
+            # WANDB_BASE_URL has no CLI equivalent; without forwarding it,
+            # remote actors default to wandb.ai and fail in egress-restricted envs.
             **{k: os.environ[k] for k in ("WANDB_BASE_URL", "WANDB_API_KEY") if k in os.environ},
-            # Multi-node NCCL transport tuning (mirrors
-            # scripts/run-glm4.5-355B-A32B.sh). Without these, the first
-            # cross-node NCCL collective — all_gather_object inside
-            # Megatron's _get_param_groups, right after param count is
-            # printed — fails with ncclRemoteError on Connect.
-            # NCCL_SOCKET_IFNAME, GLOO_SOCKET_IFNAME, MASTER_ADDR,
-            # no_proxy and NCCL_NVLS_ENABLE are already handled by
-            # miles/utils/external_utils/command_utils.py.
-            # NCCL_IB_HCA selects the RoCE HCAs (mlx5_bond_0..7 on this
-            # cluster — prefix match picks all 8). Uncomment NCCL_DEBUG
-            # to re-diagnose cross-node transport if it regresses.
+            # Multi-node NCCL transport tuning. Without these the first cross-node
+            # collective (Megatron _get_param_groups) fails with ncclRemoteError.
+            # NCCL_IB_HCA prefix selects all RoCE HCAs on the cluster.
             **{k: os.environ[k] for k in ("TP_SOCKET_IFNAME",) if k in os.environ},
             "NCCL_IB_HCA": "mlx5_bond",
             "NCCL_CUMEM_ENABLE": "0",
@@ -435,7 +349,6 @@ def execute(args: ScriptArgs):
             "NCCL_IB_QPS_PER_CONNECTION": "8",
             "NCCL_P2P_LEVEL": "NVL",
             "NCCL_MIN_CTAS": "4",
-            # "NCCL_DEBUG": "INFO",
         },
     )
 

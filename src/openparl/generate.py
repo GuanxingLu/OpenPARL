@@ -295,12 +295,10 @@ def _add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--assign-task-impl-path",
         type=str,
-        default="openparl.math.assign_task.call",
+        default="openparl.widesearch.assign_task.call",
         help=(
             "Importable path to an async `call(params, *, registry, tokenizer, router_url)` "
-            "function implementing the assign_task subagent inference. Math default is a "
-            "single-turn SGLang call; widesearch replaces this with a multi-turn ReAct "
-            "loop wired to the local RAG server."
+            "function implementing the assign_task subagent inference."
         ),
     )
     parser.add_argument(

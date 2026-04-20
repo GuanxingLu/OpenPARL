@@ -140,7 +140,7 @@ def _score_one(args, sample: Sample, lam1: float, lam2: float) -> dict:
 
 
 def _fill_per_token_advantages(samples: list[Sample], score_dicts: list[dict]) -> None:
-    """Group-normalized per-turn advantages. Identical logic to math/reward."""
+    """Group-normalized per-turn advantages."""
     finals = np.array([sd["_r_final"] for sd in score_dicts], dtype=np.float64)
     non_final_pool = [r for sd in score_dicts for r in sd["_per_turn_r"] if r is not None]
 
