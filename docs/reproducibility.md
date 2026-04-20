@@ -97,9 +97,9 @@ The three runs plotted in [`BLOG.md`](../BLOG.md):
 
 | Blog label | Launcher | Wandb run ID | State at snapshot | Duration |
 |---|---|---|---|---|
-| `paper-config`    | `scripts/run-qwen3-4B-orchestrator_only.sh` | `gbamfgd3` | running, ~80 rollouts | ~21.7 h |
-| `orch-only`       | `scripts/run-qwen3-4B-parl.sh`              | `tqzr8z9x` | running, ~94 rollouts | ~21.7 h |
-| `single-baseline` | `scripts/run-qwen3-4B-single.sh`            | `pa9lipn3` | crashed at rollout 119 | ~9.6 h  |
+| **PARL**          | `scripts/run-qwen3-4B-orchestrator_only.sh` | `gbamfgd3` | running, ~80 rollouts | ~21.7 h |
+| **Delegate-only** | `scripts/run-qwen3-4B-parl.sh`              | `tqzr8z9x` | running, ~94 rollouts | ~21.7 h |
+| **Single**        | `scripts/run-qwen3-4B-single.sh`            | `pa9lipn3` | crashed at rollout 119 | ~9.6 h  |
 
 All three ran on `miles-dev-multi-agent` (self-hosted wandb).
 Replace `miles-dev-multi-agent` with your own wandb project when
@@ -114,9 +114,9 @@ One-H200-node figures at `--rollout-max-critical-steps 48`,
 
 | Run | Rollouts observed | Avg step time (end of training) |
 |---|---|---|
-| `paper-config`    | 80 | ~1600 s/step (delegation adds rollout latency) |
-| `orch-only`       | 94 | ~1400 s/step |
-| `single-baseline` | 119 | ~300 s/step (no subagent dispatch; crashed mid-run) |
+| **PARL**          | 80  | ~1600 s/step (delegation adds rollout latency) |
+| **Delegate-only** | 94  | ~1400 s/step |
+| **Single**        | 119 | ~300 s/step (no subagent dispatch; crashed mid-run) |
 
 Step time grows ~6× over training for the swarm runs as delegation
 depth increases. If you are budget-constrained, plan for ~24 h/run at
@@ -125,7 +125,7 @@ depth increases. If you are budget-constrained, plan for ~24 h/run at
 ## Known issues
 
 - **`ANNEAL_FRAC = 100.0` in `src/openparl/widesearch/reward.py`
-  disables λ₁/λ₂ annealing.** The paper-config run shows the classic
+  disables λ₁/λ₂ annealing.** The PARL run shows the classic
   spurious-parallelism signature under this setting
   (`eval/widesearch/reward/n_assign/mean` climbs 0.06 → 12.66 while
   `item_f1` declines). Flip to something ≤ 1.0 to enable annealing if

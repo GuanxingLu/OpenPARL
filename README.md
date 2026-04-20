@@ -21,28 +21,33 @@ A minimal, from-scratch reproduction of the K2.5 PARL recipe:
   with genuine concurrent dispatch.
 - Critical-step budget as the episode bound, not total tool calls.
 
-Three launcher configurations that isolate the role of the K2.5
-orchestrator prompt:
+Three launcher configurations along a single action-space axis:
 
-| Launcher | Prompt | Tools available | Blog label |
+| Launcher | `--agent-mode` | Tools available | Blog label |
 |---|---|---|---|
-| `scripts/run-qwen3-4B-orchestrator_only.sh` | K2.5 orchestrator prompt (`swarm-paper`) | search / browse / python + `create_subagent` / `assign_task` | **paper-config** |
-| `scripts/run-qwen3-4B-parl.sh`              | OpenPARL default (`swarm-strict`)         | same as above | **orch-only** |
-| `scripts/run-qwen3-4B-single.sh`            | Single-agent prompt                       | search / browse / python only | **single-baseline** |
+| `scripts/run-qwen3-4B-orchestrator_only.sh` | `swarm-paper` | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
+| `scripts/run-qwen3-4B-parl.sh`              | `swarm` (swarm-strict) | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
+| `scripts/run-qwen3-4B-single.sh`            | `single-agent` | search / browse / python **only** (no delegation) | **Single** |
 
-(Launcher names are historical; the blog's labels are the useful
-mental model.)
+**PARL** follows K2.5 Appendix E.8 literally — the Orchestrator
+prompt enumerates Search / Browser / Sub-Agent tools / code
+execution, i.e. the full core toolset plus the two swarm tools.
+**Delegate-only** is a stricter-than-paper ablation that strips the
+direct-tool fallback to probe what happens when the Orchestrator
+*must* delegate. Launcher filenames are historical; the blog labels
+are the authoritative mental model.
 
 ## Headline result
 
 See [**BLOG.md**](BLOG.md) for the full write-up. One-sentence version:
 **the same RL signal pushes the Orchestrator into opposite phase
-transitions depending only on its system prompt** — the paper prompt
-drives `assign_task` rate from 0.03 → 1.00 in <60 training steps, while
-the default prompt un-learns delegation (0.80 → 0.10) and decoheres the
-policy (truncation climbs to ~23%, repetition to ~24%).
+transitions depending only on whether it has a direct-tool fallback**
+— PARL (paper action space) drives `assign_task` rate from 0.03 →
+1.00 in <60 training steps, while Delegate-only (no fallback)
+un-learns delegation (0.80 → 0.10) and decoheres the policy
+(truncation climbs to ~23%, repetition to ~24%).
 
-![phase transition](docs/assets/phase_transition.png)
+![subagent dynamics](docs/assets/subagent_dynamics.png)
 
 ## Install
 
@@ -82,9 +87,9 @@ python -m openparl.widesearch.prepare_data
 bash scripts/launch_rag_server.sh
 
 # 3. Pick a config.
-bash scripts/run-qwen3-4B-orchestrator_only.sh   # paper-config
-bash scripts/run-qwen3-4B-parl.sh                # orch-only
-bash scripts/run-qwen3-4B-single.sh              # single-baseline
+bash scripts/run-qwen3-4B-orchestrator_only.sh   # PARL          (swarm-paper)
+bash scripts/run-qwen3-4B-parl.sh                # Delegate-only (swarm-strict)
+bash scripts/run-qwen3-4B-single.sh              # Single        (single-agent)
 ```
 
 Hardware / env vars / expected wall-clock + the exact run IDs
@@ -96,7 +101,7 @@ reproduced in [BLOG.md](BLOG.md) are documented in
 80-step snapshot of the three training runs (self-hosted wandb, see
 `docs/reproducibility.md` for the run IDs):
 
-| Metric (first → last window) | single-baseline | orch-only | paper-config |
+| Metric (first → last window) | Single | Delegate-only | PARL |
 |---|---|---|---|
 | `multi_turn/assign_rate`            | 0.00 → 0.00 | 0.80 → **0.10** ↘ | 0.03 → **1.00** ↗ |
 | `multi_turn/delegate_ratio/mean`    | 0.00        | —                 | 0.02 → **0.99** ↗ |
