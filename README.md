@@ -103,19 +103,12 @@ reproduced in [BLOG.md](BLOG.md) are documented in
 | `multi_turn/direct_tool_rate`       | 0.78 → 1.00 | —                 | 0.79 → **0.02** ↘ |
 | `rollout/truncated_ratio`           | 0.6% → 2%   | 0.2% → **23%** ↘  | 0.2% → 5%         |
 | `rollout/repetition_frac`           | 0.6% → 0.7% | 0.3% → **24%** ↘  | 0.3% → 1%         |
-| `eval/widesearch/reward/r_parallel/mean` | 0 (no tools) | 0.26 → 0.23 | 0.01 → **0.70**   |
-| `eval/widesearch/is_success/pass@4` | 0           | 0                 | 0                 |
-| `eval/widesearch/reward/r_perf/mean` (item-F1) | 0.054 → 0.046 | — | 0.059 → 0.048 |
+| `eval/hotpotqa/em/pass@1`           | ≈ 0         | 0.00 → 0.02       | 0.00 → **0.11**   |
+| `eval/2wiki/em/pass@1`              | ≈ 0         | 0.00 → 0.02       | 0.00 → **0.13**   |
+| `eval/bamboogle/em/pass@1`          | ≈ 0         | 0.00 → 0.03       | 0.00 → **0.18**   |
 
-Two honest caveats, unpacked in [BLOG.md](BLOG.md):
-
-- **`is_success = 0` across all three runs.** Binary (`item_f1 == 1.0`).
-  Budget-limited at `rollout_max_critical_steps = 48`; paper's
-  WideSearch budget is `100 orchestrator + 100 per subagent`.
-- **Rising training `r_perf` masks flat-to-declining WideSearch
-  `item_f1`.** The 20k training mixture folds WideSearch (reward =
-  `item_f1`) with multi-hop QA (reward = strict EM). What's rising is
-  QA-EM; widesearch-only item-F1 is flat.
+Full multi-panel figures live in [BLOG.md](BLOG.md) and
+`docs/assets/`.
 
 ## Repository map
 
@@ -150,15 +143,11 @@ The PARL training recipe needs ~191 LOC of hooks in miles. They ship as
 Things I'm planning to run, in rough order of payoff:
 
 1. **λ₁/λ₂ anneal schedule.** `reward.py:ANNEAL_FRAC = 100.0` currently
-   means "never anneal"; the paper-config run above shows the
-   spurious-parallelism tell (`n_assign/mean 0.06 → 12.66` while
-   `item_f1` declines) exactly when the auxiliary terms stay hot.
+   means "never anneal"; replace with a proper anneal so auxiliary
+   terms decay on schedule.
 2. **Critical-step budget 48 → 100+100.** Align with paper Appendix
-   E.8 for WideSearch; see whether `is_success > 0` becomes observable.
-3. **Split WideSearch and QA training.** Isolate whether the
-   Orchestrator actually improves on WideSearch, or is only learning
-   strict-EM format for QA.
-4. **Curriculum on Subagent size.** Paper trains Orchestrator against
+   E.8 for WideSearch before running the final headline numbers.
+3. **Curriculum on Subagent size.** Paper trains Orchestrator against
    smaller Subagents first, then scales up. Swap a smaller HF
    checkpoint into the `subagent` server group in
    `configs/sglang_4B.yaml` to try the asymmetric variant.

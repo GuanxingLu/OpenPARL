@@ -17,3 +17,6 @@ saves/
 .DS_Store
 .idea/
 .vscode/
+
+# Local-only helper scripts (plot generation from wandb, ad-hoc analysis).
+tools/
