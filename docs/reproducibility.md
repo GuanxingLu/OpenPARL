@@ -8,11 +8,20 @@
 
 ## Software
 
-Pinned via `install.sh`:
+OpenPARL runs inside the official miles Docker container. The host only
+needs Docker with `--gpus` support; Python / CUDA / SGLang / Megatron /
+Ray are all baked into the image.
 
-* `miles@v0.1-openparl` (= `radixark/miles@5d11fe2f0` + 4 PARL hook commits).
-* SGLang, Megatron-LM, Ray — transitive deps of miles.
-* Python 3.10+.
+* Container image: **`radixark/miles:latest`** (Docker Hub, public).
+  For the exact tag used for the blog numbers, pin to **_TBD_** (author
+  to fill — record the `docker image ls --digests` line of the image
+  that produced the headline results).
+* Overlaid inside the container by `install.sh`:
+  * `miles` fork at tag `v0.1-openparl` (= `radixark/miles@5d11fe2f0` +
+    4 PARL hook commits, ~191 LOC). Installed with `--no-deps
+    --force-reinstall` so the image's sglang / megatron / ray pins are
+    preserved.
+  * OpenPARL in editable mode (`pip install -e .`).
 
 ## Environment variables
 

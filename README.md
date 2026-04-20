@@ -25,15 +25,30 @@ Three launcher configurations are provided for comparison:
 
 ## Install
 
+OpenPARL runs inside the official miles container. Nothing is installed
+on your host.
+
 ```bash
+# 1. Clone on the host
 git clone https://github.com/GuanxingLu/OpenPARL.git
 cd OpenPARL
-./install.sh
+
+# 2. Enter the miles container with OpenPARL mounted
+docker run --gpus all -it --shm-size=32g --privileged \
+    --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65536:65536 \
+    -v "$(pwd)":/workspace/OpenPARL \
+    radixark/miles:latest /bin/bash
+
+# 3. Inside the container:
+cd /workspace/OpenPARL && ./install.sh
 ```
 
-`install.sh` pulls a pinned miles fork
-(`GuanxingLu/miles@v0.1-openparl` — ~191 LOC of PARL hooks on top of
-`radixark/miles@5d11fe2f0`) and installs OpenPARL in editable mode.
+`install.sh` overlays 4 PARL framework hook commits on top of the image's
+miles (via `pip install --no-deps ...@v0.1-openparl`, leaving sglang /
+megatron / ray untouched) and installs OpenPARL in editable mode.
+
+For the exact miles image tag used for the blog results, see
+[`docs/reproducibility.md`](docs/reproducibility.md).
 
 ## Reproduce
 
