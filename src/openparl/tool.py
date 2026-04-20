@@ -1,28 +1,19 @@
-"""Shared orchestrator tool layer for PARL v2 (env-agnostic).
+"""Orchestrator tool layer (env-agnostic): create_subagent / assign_task.
 
-Holds:
-- ``tool_specs``: the two orchestrator tools ``create_subagent`` and
-  ``assign_task`` exposed to SGLang tool-call parsing.
-- ``_create_subagent``: pure registry write; no inference.
-- ``SUBAGENT_OUTPUT_SUFFIX`` + ``extract_subagent_result``: context-sharding
-  contract — every subagent appends this to its system prompt and must wrap
-  its final output in <result>…</result>; orchestrator receives only that
-  block.
-
-The actual subagent inference (``assign_task``) is environment-specific and
-lives under ``openparl/<env>/assign_task.py::call``. The impl path
-is loaded by ``generate.py`` at startup via ``--assign-task-impl-path``
-(default resolved in ``openparl.run`` from ``--env``).
+create_subagent is a pure registry write (no inference).
+Subagent inference (assign_task) is environment-specific; the concrete
+impl is resolved via --assign-task-impl-path (default: openparl.run
+picks one based on --env).
+SUBAGENT_OUTPUT_SUFFIX + extract_subagent_result enforce the context-
+sharding contract: subagents must wrap their final output in
+<result>...</result>; orchestrator sees only that block.
 """
 
 import re
 
 MAX_REGISTRY_SIZE = 8
 
-# ── Context-sharding: subagent output extraction ──────────────────────
-# Appended to every subagent's system prompt so it always emits a
-# <result>…</result> block.  The extractor returns only that block to
-# the orchestrator, keeping its context bounded.
+# Appended to every subagent's system prompt — orchestrator receives only the <result>...</result> block.
 SUBAGENT_OUTPUT_SUFFIX = (
     "\n\n# Output Format\n"
     "After completing your work, you MUST wrap your final answer or key "
