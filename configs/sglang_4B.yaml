@@ -24,8 +24,7 @@ sglang:
         num_gpus: 6        # 3 engines × TP=2
   - name: subagent
     # model_path empty -> falls back to args.hf_checkpoint (hard-frozen).
-    # For heterogeneous-size ablation, set an explicit path here
-    # (e.g. /workspace/miles/MODEL/Qwen3-0.6B).
+    # For heterogeneous-size ablation, set an explicit path here.
     update_weights: false
     server_groups:
       - worker_type: regular

@@ -24,8 +24,8 @@ OpenPARL runs two SGLang engines in colocate mode:
 
 1. **Orchestrator engine** — weights track the training actor, updated
    each Actor `update_weights` cycle.
-2. **Subagent engine** — weights pinned at the 0.6B checkpoint, CPU-backup
-   enabled so they survive Actor weight pushes unscathed.
+2. **Subagent engine** — weights pinned at the frozen Subagent checkpoint,
+   CPU-backup enabled so they survive Actor weight pushes unscathed.
 
 The `enable_weights_cpu_backup` configuration lives in the sglang yaml
 (`configs/sglang_4B.yaml`). No miles source change is needed for the

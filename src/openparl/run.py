@@ -32,13 +32,6 @@ _MODEL_DEFAULTS = {
         "tensor_model_parallel_size": 2,
         "rollout_num_gpus_per_engine": 2,
     },
-    "qwen3-0.6B": {
-        "hf_checkpoint": "MODEL/Qwen3-0.6B",
-        "ref_load": "MODEL/Qwen3-0.6B_torch_dist",
-        "megatron_model_type": "qwen3-0.6B",
-        "tensor_model_parallel_size": 1,
-        "rollout_num_gpus_per_engine": 1,
-    },
     "qwen3-30B-A3B": {
         "hf_checkpoint": "MODEL/Qwen3-30B-A3B",
         "ref_load": "MODEL/Qwen3-30B-A3B_torch_dist",
@@ -55,7 +48,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
     run_id: str = field(default_factory=U.create_run_id)
     hardware: Literal["H100", "GB200", "GB300"] = "H100"
     num_gpus_per_node: int | None = None
-    model: Literal["qwen3-4B", "qwen3-0.6B", "qwen3-30B-A3B"] = "qwen3-0.6B"
+    model: Literal["qwen3-4B", "qwen3-30B-A3B"] = "qwen3-4B"
     # Selects the environment-specific reward / assign_task implementation.
     # Each env lives under openparl/<env>/ with reward.py + assign_task.py.
     env: Literal["math", "widesearch"] = "math"
