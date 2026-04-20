@@ -1,4 +1,4 @@
-"""Orchestrator system prompts for the three PARL v2 agent modes.
+"""Orchestrator system prompts for the three agent modes.
 
 - ``ORCHESTRATOR_SYSTEM_PROMPT`` (swarm-strict): only ``create_subagent`` /
   ``assign_task`` available, so the Orchestrator must delegate to touch

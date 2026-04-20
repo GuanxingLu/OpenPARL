@@ -93,7 +93,7 @@ class ScriptArgs(U.ExecuteTrainConfig):
     #                  Widesearch-only (math has no direct tools).
     #   single-agent : widesearch → Orchestrator holds only direct
     #                  ``search`` / ``access`` (no subagent). Math →
-    #                  strips the entire PARL v2 layer and runs plain
+    #                  strips the entire delegation layer and runs plain
     #                  single-turn GRPO against rm-type=deepscaler (the
     #                  isolated-variable baseline for openparl/math).
     agent_mode: Literal["swarm", "swarm-paper", "single-agent"] = "swarm"
