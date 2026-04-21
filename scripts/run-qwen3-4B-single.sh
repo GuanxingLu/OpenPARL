@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Single-agent widesearch baseline on Qwen3-4B (H200x8).
+# Single-agent widesearch baseline on Qwen3-4B.
 #
 # Orchestrator holds ONLY direct search/access, no create_subagent, no
 # assign_task. This is the same training infra (reward, GRPO+TIS+icepop,

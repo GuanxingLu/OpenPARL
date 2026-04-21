@@ -91,8 +91,7 @@ EM solid, cover-EM dashed.
 
 ---
 
-**Runs**: 1× H200 × 8, Qwen3-4B Orchestrator + frozen Qwen3-4B
-subagent, GRPO, ~80 updates.
+**Runs**: Qwen3-4B Orchestrator + frozen Qwen3-4B subagent, GRPO, ~80 updates.
 
 **Reference**: Kimi Team, *Kimi K2.5: Visual Agentic Intelligence*,
 arXiv:2602.02276, §3.1 and Appendix E.8.

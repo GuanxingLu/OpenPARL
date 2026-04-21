@@ -80,7 +80,7 @@ training runs.
 ```bash
 export OPENPARL_RAG_SERVER=localhost:8000    # must match the PORT above
 export WANDB_API_KEY=...                     # required
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  # one H200 node
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 DATA_ROOT=/path/to/DATA \
 MODEL_ROOT=/path/to/MODEL \
@@ -103,7 +103,7 @@ The PARL training recipe needs ~191 LOC of hooks in miles. They ship as
 | Commit | What it enables |
 |---|---|
 | `feat(sample): per-token advantages for turn-level credit assignment` | Routes advantage only to Orchestrator tokens; Subagent tokens are zero-grad |
-| `feat(args): --disable-entropy-computation flag` | Lets 4B + 4B frozen subagent fit one H200 node (skips the fp32 entropy allocation peak) |
+| `feat(args): --disable-entropy-computation flag` | Lets 4B + 4B frozen subagent fit on a single node (skips the fp32 entropy allocation peak) |
 | `feat(metrics): multi-agent pass@k + tool-call-parse-failure + paper-style @k` | Correct `pass_reward` accounting when rollout emits non-primary trajectories; false-tool-call rate; avg@N / max@N aggregators |
 | `feat(rollout): allow group_rm during eval for multi-agent rollouts` | Unblocks eval when the reward function sees the whole (Orchestrator + Subagent) group |
 

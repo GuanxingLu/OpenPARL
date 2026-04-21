@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Delegate-only widesearch run on Qwen3-4B (H200x8): stricter-than-paper ablation.
+# Delegate-only widesearch run on Qwen3-4B: stricter-than-paper ablation.
 # Orchestrator can only call create_subagent / assign_task (no direct
 # search/browse/python fallback). Prereq: local RAG server on :8000.
 # See widesearch/README.md.
