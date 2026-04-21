@@ -3,10 +3,10 @@
 **Research reproduction of Kimi K2.5 Agent Swarm (PARL) on WideSearch.**
 arXiv:2602.02276, *"Kimi K2.5: Visual Agentic Intelligence"* (Kimi Team, 2026).
 
-> OpenPARL is an independent reproduction, **not** an official Kimi /
+> OpenPARL is a personal learning independent reproduction, **not** an official Kimi /
 > Moonshot product. No endorsement by the paper authors is implied.
 
-## What's here
+## Features
 
 A minimal, from-scratch reproduction of the K2.5 PARL recipe:
 
@@ -20,15 +20,13 @@ Three launcher configurations along a single action-space axis:
 
 | Launcher | `--agent-mode` | Tools available | Blog label |
 |---|---|---|---|
-| `scripts/run-qwen3-4B-orchestrator_only.sh` | `swarm-paper` | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
-| `scripts/run-qwen3-4B-parl.sh`              | `swarm` (swarm-strict) | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
-| `scripts/run-qwen3-4B-single.sh`            | `single-agent` | search / browse / python **only** (no delegation) | **Single** |
+| `scripts/run-qwen3-4B-parl.sh`           | `swarm-paper` | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
+| `scripts/run-qwen3-4B-delegate-only.sh`  | `swarm`       | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
+| `scripts/run-qwen3-4B-single.sh`         | `single-agent` | search / browse / python **only** (no delegation) | **Single** |
 
 **PARL** follows K2.5 Appendix E.8 literally. **Delegate-only** is a
 stricter-than-paper ablation that strips the direct-tool fallback to
-probe what happens when the Orchestrator *must* delegate. Launcher
-filenames are historical; the blog labels are the authoritative mental
-model.
+probe what happens when the Orchestrator *must* delegate.
 
 ![subagent dynamics](docs/assets/subagent_dynamics.png)
 
@@ -64,12 +62,12 @@ python -m openparl.widesearch.prepare_data
 bash scripts/launch_rag_server.sh
 
 # 3. Pick a config.
-bash scripts/run-qwen3-4B-orchestrator_only.sh   # PARL          (swarm-paper)
-bash scripts/run-qwen3-4B-parl.sh                # Delegate-only (swarm-strict)
-bash scripts/run-qwen3-4B-single.sh              # Single        (single-agent)
+bash scripts/run-qwen3-4B-parl.sh           # PARL          (swarm-paper)
+bash scripts/run-qwen3-4B-delegate-only.sh  # Delegate-only (swarm)
+bash scripts/run-qwen3-4B-single.sh         # Single        (single-agent)
 ```
 
-## Framework hooks
+## RL Infra
 
 The PARL training recipe needs ~191 LOC of hooks in miles. They ship as
 4 paper-legible commits on
@@ -86,8 +84,3 @@ The PARL training recipe needs ~191 LOC of hooks in miles. They ship as
 ## License
 
 Apache-2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
-
-## Cite
-
-If you build on OpenPARL, please cite the Kimi K2.5 paper and this
-repository. BibTeX lives at the bottom of [BLOG.md](BLOG.md).

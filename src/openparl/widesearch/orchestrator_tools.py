@@ -12,7 +12,7 @@ context, only ``<result>…</result>`` returns to the Orchestrator).
 
 Three tool-spec sets:
   - ``tool_specs_swarm``       : [create_subagent, assign_task]
-                                 (current swarm-strict default; forces
+                                 (current delegate-only default; forces
                                  delegation by construction).
   - ``tool_specs_swarm_paper`` : [create_subagent, assign_task,
                                   search, access]

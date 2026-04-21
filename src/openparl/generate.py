@@ -94,7 +94,7 @@ async def _execute_tool_calls_parallel(
     ``direct_dispatch`` is an optional ``async (name, params) -> str | None``
     callable; ``None`` return means "unknown tool" and falls through to
     the error path. Set to ``None`` (the arg, not the return) for
-    swarm-strict, where the Orchestrator only owns subagent tools.
+    delegate-only, where the Orchestrator only owns subagent tools.
 
     Preserves original tool_call order so response-text ↔ tool_response
     mapping stays intact. Returns ``(tool_messages, per_turn_stats)``.
@@ -307,9 +307,9 @@ def _add_arguments(parser: argparse.ArgumentParser):
         default=None,
         help=(
             "Importable path to the Orchestrator system prompt string. Unset "
-            "= the swarm-strict default in openparl.prompts. "
-            "Swarm-paper sets ORCHESTRATOR_SYSTEM_PROMPT_PAPER; single-agent "
-            "baseline sets ORCHESTRATOR_SYSTEM_PROMPT_SINGLE."
+            "= the delegate-only default in openparl.prompts. "
+            "PARL (swarm-paper) sets ORCHESTRATOR_SYSTEM_PROMPT_PAPER; "
+            "single-agent baseline sets ORCHESTRATOR_SYSTEM_PROMPT_SINGLE."
         ),
     )
     parser.add_argument(
@@ -319,7 +319,7 @@ def _add_arguments(parser: argparse.ArgumentParser):
         help=(
             "Importable path to an async `dispatch(name, params) -> str | None` "
             "coroutine that handles Orchestrator-side direct tool calls (e.g., "
-            "widesearch search/access). Unset = swarm-strict: Orchestrator "
+            "widesearch search/access). Unset = delegate-only: Orchestrator "
             "holds only create_subagent / assign_task. For widesearch use "
             "openparl.widesearch.orchestrator_tools.dispatch."
         ),

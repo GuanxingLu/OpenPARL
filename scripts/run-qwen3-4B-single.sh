@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# PARL v2 widesearch single-agent baseline (Arm C).
+# Single-agent widesearch baseline on Qwen3-4B (H200x8).
 #
 # Orchestrator holds ONLY direct search/access, no create_subagent, no
 # assign_task. This is the same training infra (reward, GRPO+TIS+icepop,
-# group-rm, optimizer, parallelism) as swarm-strict / swarm-paper, with
+# group-rm, optimizer, parallelism) as delegate-only / PARL, with
 # one variable flipped: subagent tools are gone. Fair baseline for the
 # blog's delegation-vs-direct comparison.
 #
-# Key knobs vs Arm A/B:
+# Key knobs vs PARL / delegate-only:
 # - --agent-mode single-agent
 # - SGLANG_EXTRA_ARGS is empty (no frozen subagent pool needed)
 # - --generate-max-turns 48 (matches Arm A/B's --rollout-max-critical-steps

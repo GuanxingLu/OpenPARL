@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# PARL v2 widesearch run: paper-faithful swarm (Arm B).
-#
-# Orchestrator gets direct search/access in addition to create_subagent /
-# assign_task. Frozen-subagent topology and everything else matches
-# run-qwen3-4B-widesearch.sh (Arm A, swarm-strict); only --agent-mode and
-# the save-subdir differ. Prereq: local RAG server running on :8765.
+# Delegate-only widesearch run on Qwen3-4B (H200x8): stricter-than-paper ablation.
+# Orchestrator can only call create_subagent / assign_task (no direct
+# search/browse/python fallback). Prereq: local RAG server on :8000.
+# See widesearch/README.md.
 
 pkill -9 sglang
 sleep 3
 ray stop --force
 pkill -9 ray
-# Targeted python kill so we don't clobber the long-running RAG server.
+# Targeted python kill so we don't clobber the long-running RAG server
+# (examples/agent/tools/search_local_server_qdrant/local_retrieval_server.py).
+# Matches ray workers + miles train.py + openparl launcher processes only.
 pkill -9 -f 'ray::\|train\.py\|openparl' || true
 sleep 3
 pkill -9 ray
@@ -22,6 +22,8 @@ set -ex
 export PYTHONBUFFERED=16
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}
 
+# Strip any inherited proxy vars; httpx picks them up and tries SOCKS on hosts
+# that don't have socksio installed, which kills the RAG client path.
 unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 NVLINK_COUNT=$(nvidia-smi | grep -o "NVLink" | wc -l)
 if [ "$NVLINK_COUNT" -gt 0 ]; then HAS_NVLINK=1; else HAS_NVLINK=0; fi
@@ -40,15 +42,13 @@ MODE=${MODE:-normal}
 NUM_GPUS=$(echo "${CUDA_VISIBLE_DEVICES}" | awk -F',' '{print NF}')
 RUN_ID=${RUN_ID:-"run_$(date +%Y%m%d_%H%M%S)"}
 
-# widesearch-specific env vars consumed by widesearch/assign_task.py AND
-# widesearch/orchestrator_tools.py (both read OPENPARL_RAG_SERVER).
+# widesearch-specific env vars consumed by widesearch/assign_task.py.
 export OPENPARL_RAG_SERVER=${OPENPARL_RAG_SERVER:-localhost:8000}
 export OPENPARL_SUBAGENT_MAX_TURNS=${OPENPARL_SUBAGENT_MAX_TURNS:-8}
 export OPENPARL_SUBAGENT_MAX_TOOLCALLS=${OPENPARL_SUBAGENT_MAX_TOOLCALLS:-10}
 export OPENPARL_SUBAGENT_CONCURRENCY=${OPENPARL_SUBAGENT_CONCURRENCY:-32}
 
 MODEL_ARGS=(
-   --env widesearch
    --model qwen3-4B
    --hf-checkpoint "${MODEL_ROOT}/Qwen3-4B"
    --ref-load "${MODEL_ROOT}/Qwen3-4B_torch_dist"
@@ -58,8 +58,10 @@ RUN_ARGS=(
    --mode "${MODE}"
    --run-id "${RUN_ID}"
    --dev-repo-dir "${DEV_REPO_DIR}"
-   --save-path "${DEV_REPO_DIR}/saves/Qwen3-4B-parl-v2-paper-widesearch/${RUN_ID}"
+   --save-path "${DEV_REPO_DIR}/saves/Qwen3-4B-parl-v2-widesearch/${RUN_ID}"
    --rollout-batch-size 64
+   # global-batch-size = rollout_batch_size * n_samples_per_prompt (64*8=512)
+   # => 1 grad step per rollout (matches RLinf n_minibatches=1, fully on-policy).
    --global-batch-size 512
    --rollout-max-response-len 28672
    --rollout-max-critical-steps 48
@@ -94,14 +96,24 @@ EVAL_EXTRA_ARGS=(
    bamboogle  "${DATA_ROOT}/asearcher-test/Bamboogle/test.miles.jsonl"
 )
 
+# Dynamic batch sizing caps per-rank micro-batch tokens. 20480 is chosen to
+# fit the fp32 entropy spike in compute_entropy_from_logits: on Qwen3-4B +
+# TP=2 the per-rank logits tensor is [N, 75968]; entropy's fp32 upcast
+# needs ~N*75968*4 bytes per allocation, and 32768 OOM'd at 8.91 GiB while
+# only 7.25 GiB was free. 20480 keeps that peak at ~5.8 GiB. Sequences
+# longer than 20480 get split across micro-batches by dynamic batch.
 PERF_ARGS=(
    --use-dynamic-batch-size
    --max-tokens-per-gpu 20480
 )
 
+# Override hardcoded optimizer defaults in openparl.run (weight_decay=0.1,
+# adam_beta2=0.98) via --extra-args (argparse last-wins).
 OPTIM_OVERRIDE_ARGS=(
    --weight-decay 0.01
    --adam-beta2 0.999
+   # Skip entropy in policy loss (entropy-coef is 0 anyway): saves the fp32
+   # peak alloc inside compute_entropy_from_logits. See miles/utils/arguments.py.
    --disable-entropy-computation
 )
 
@@ -116,9 +128,8 @@ ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus ${NUM_GPUS} \
 export RAY_ADDRESS="http://127.0.0.1:${RAY_DASHBOARD_PORT}"
 export MILES_SCRIPT_EXTERNAL_RAY=1
 
-# swarm-paper keeps the frozen-subagent topology: Orchestrator's direct
-# search/access hit the RAG server; its assign_task spawns still go to
-# the frozen-SGLang pool declared in sglang_config_4B.yaml.
+# SUBAGENT_MODE: 'frozen' carves a separate SGLang pool for the subagent
+# (via --sglang-config); 'shared' reuses the Orchestrator's pool.
 SUBAGENT_MODE=${SUBAGENT_MODE:-frozen}
 if [ "$SUBAGENT_MODE" = "frozen" ]; then
    SGLANG_EXTRA_ARGS=(--sglang-config openparl/sglang_config_4B.yaml)
@@ -136,5 +147,4 @@ python -m openparl.run \
    ${DATA_ARGS[@]} \
    ${GENERATE_ARGS[@]} \
    "${SGLANG_EXTRA_ARGS[@]}" \
-   --agent-mode swarm-paper \
    --extra-args "${EVAL_EXTRA_ARGS[*]} ${PERF_ARGS[*]} ${OPTIM_OVERRIDE_ARGS[*]}"

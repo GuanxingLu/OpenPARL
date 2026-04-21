@@ -136,7 +136,7 @@ def _compute_multi_turn_metrics(args, samples):
         log_dict |= _stats(per_turn_assigns, "multi_turn/assign_per_turn")
 
     # per-turn n_search / n_access distribution (direct-tool parallelism).
-    # Non-zero only in swarm-paper / single-agent modes (swarm-strict
+    # Non-zero only in swarm-paper / single-agent modes (delegate-only
     # doesn't expose these tools to the Orchestrator).
     per_turn_search = _per_turn_field_counts(samples, "n_search")
     if any(v > 0 for v in per_turn_search):
@@ -159,7 +159,7 @@ def _compute_multi_turn_metrics(args, samples):
 
     # delegate_ratio: serial-collapse diagnostic for swarm-paper mode.
     # Only meaningful when at least some direct-tool capability is present
-    # (swarm-strict will always have ratio=1 since n_direct=0).
+    # (delegate-only will always have ratio=1 since n_direct=0).
     delegate_ratios = _delegate_ratios(samples)
     if delegate_ratios and any(v > 0 for v in n_search_total + n_access_total):
         log_dict |= _stats(delegate_ratios, "multi_turn/delegate_ratio")

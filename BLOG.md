@@ -20,8 +20,8 @@ rollout budget, GRPO config) is identical.
 | Run | `--agent-mode` | Direct tools<br/>(search / browse / python) | Subagent tools<br/>(`create_subagent` / `assign_task`) |
 |---|---|:---:|:---:|
 | **Single**              | `single-agent` | ✓ | ✗ |
-| **Delegate-only** (swarm-strict) | `swarm`        | ✗ | ✓ |
-| **PARL** (swarm-paper)  | `swarm-paper`  | ✓ | ✓ |
+| **Delegate-only**       | `swarm`        | ✗ | ✓ |
+| **PARL**                | `swarm-paper`  | ✓ | ✓ |
 
 **PARL** mirrors K2.5 Appendix E.8: the Orchestrator prompt
 enumerates Search / Browser / code execution *and* the two swarm

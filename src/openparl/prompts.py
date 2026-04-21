@@ -1,9 +1,10 @@
 """Orchestrator system prompts for the three agent modes.
 
-- ``ORCHESTRATOR_SYSTEM_PROMPT`` (swarm-strict): only ``create_subagent`` /
-  ``assign_task`` available, so the Orchestrator must delegate to touch
-  any data. Baseline for isolating delegation behavior.
-- ``ORCHESTRATOR_SYSTEM_PROMPT_PAPER`` (swarm-paper): paper-faithful;
+- ``ORCHESTRATOR_SYSTEM_PROMPT`` (delegate-only, ``--agent-mode swarm``):
+  only ``create_subagent`` / ``assign_task`` available, so the
+  Orchestrator must delegate to touch any data. Baseline for isolating
+  delegation behavior.
+- ``ORCHESTRATOR_SYSTEM_PROMPT_PAPER`` (PARL, ``--agent-mode swarm-paper``): paper-faithful;
   the Orchestrator gets direct ``search``/``access`` plus the subagent
   tools. No hand-coded heuristic about when to delegate vs call
   directly; the reward (r_parallel / r_finish) plus the critical_steps
@@ -18,7 +19,7 @@ prompts: ``widesearch/assign_task.py:117`` already appends
 ``SUBAGENT_REACT_SUFFIX`` (``widesearch/subagent_prompts.py:21``) to
 every sub-agent system prompt, so the sub-agent already sees them.
 
-swarm-strict and swarm-paper do disclose: (a) the 8-unique-name
+delegate-only and PARL do disclose: (a) the 8-unique-name
 registry cap and the replace-on-reuse semantics (factual claim about
 ``tool.py:20`` and ``tool.py:111``); (b) the
 sub-agent 10-tool-call + ~5000-char-per-access budget (Orchestrator
