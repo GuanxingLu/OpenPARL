@@ -13,22 +13,9 @@ A minimal, from-scratch reproduction of the K2.5 PARL recipe:
 - **Qwen3-4B Orchestrator** trained with RL (GRPO + TIS, icepop) +
   **Qwen3-4B Subagent**, frozen, serving `assign_task` on a separate
   SGLang engine.
-- Per-token credit assignment: RL advantages only touch Orchestrator
-  tokens; Subagent tokens are environmental observations.
-
-Three launcher configurations along a single action-space axis:
-
-| Launcher | `--agent-mode` | Tools available | Blog label |
-|---|---|---|---|
-| `scripts/run-qwen3-4B-parl.sh`           | `parl`           | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
-| `scripts/run-qwen3-4B-delegate-only.sh`  | `delegate-only`  | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
-| `scripts/run-qwen3-4B-single.sh`         | `single-agent` | search / browse / python **only** (no delegation) | **Single** |
-
-**PARL** follows K2.5 Appendix E.8 literally. **Delegate-only** is a
+- **PARL** follows K2.5 Appendix E.8 literally. **Delegate-only** is a
 stricter-than-paper ablation that strips the direct-tool fallback to
-probe what happens when the Orchestrator *must* delegate.
-
-![subagent dynamics](docs/assets/subagent_dynamics.png)
+probe what happens when the Orchestrator must delegate.
 
 See [**BLOG.md**](BLOG.md) for the full write-up.
 
