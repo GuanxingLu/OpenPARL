@@ -151,7 +151,7 @@ async def _execute_tool_calls_parallel(
     n_access = 0
     for i, name, text in direct_outputs:
         if text is None:
-            # dispatcher did not recognize this tool — leave None so the
+            # dispatcher did not recognize this tool; leave None so the
             # "unknown tool" error path below fires.
             continue
         results[i] = text
@@ -319,7 +319,7 @@ def _add_arguments(parser: argparse.ArgumentParser):
         help=(
             "Importable path to an async `dispatch(name, params) -> str | None` "
             "coroutine that handles Orchestrator-side direct tool calls (e.g., "
-            "widesearch search/access). Unset = swarm-strict — Orchestrator "
+            "widesearch search/access). Unset = swarm-strict: Orchestrator "
             "holds only create_subagent / assign_task. For widesearch use "
             "openparl.widesearch.orchestrator_tools.dispatch."
         ),

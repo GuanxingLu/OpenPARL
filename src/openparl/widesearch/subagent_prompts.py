@@ -6,7 +6,7 @@ runs a multi-turn ReAct loop inside ``widesearch/assign_task.py`` with
 subagent's system prompt combines:
 
 1. The ``system_prompt`` the orchestrator registered via ``create_subagent``.
-2. ``SUBAGENT_REACT_SUFFIX`` below — ReAct-style instructions describing
+2. ``SUBAGENT_REACT_SUFFIX`` below: ReAct-style instructions describing
    the two tools and the mandatory ``<result>…</result>`` output block.
 3. ``SUBAGENT_OUTPUT_SUFFIX`` from root tool.py (already appended to (1)
    by the shared convention, but we explicitly add it here too so the
@@ -22,11 +22,11 @@ SUBAGENT_REACT_SUFFIX = (
     "\n\n# ReAct Workflow\n"
     "You are a research subagent. You have two tools and must use them to answer the user's task.\n\n"
     "## Tools\n"
-    "- `search(query: str, topk: int = 3)` — runs a web-style search against a local knowledge base.\n"
+    "- `search(query: str, topk: int = 3)`: runs a web-style search against a local knowledge base.\n"
     "  Returns a markdown-formatted list of result snippets with URLs. Use this to discover URLs\n"
     "  and gather high-level context. Issue a focused single-query call per invocation; you can\n"
     "  emit multiple search tool_calls in the same turn to cover multiple sub-questions in parallel.\n"
-    "- `access(url: str)` — fetches the content of a URL from the local knowledge base.\n"
+    "- `access(url: str)`: fetches the content of a URL from the local knowledge base.\n"
     "  Returns the page body, truncated to a few thousand characters. Use this after `search` to\n"
     "  read promising documents in depth. Again, multiple `access` tool_calls can be emitted in\n"
     "  parallel in a single turn.\n\n"

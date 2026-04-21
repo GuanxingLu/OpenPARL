@@ -3,8 +3,8 @@
 - ``ORCHESTRATOR_SYSTEM_PROMPT`` (swarm-strict): only ``create_subagent`` /
   ``assign_task`` available, so the Orchestrator must delegate to touch
   any data. Baseline for isolating delegation behavior.
-- ``ORCHESTRATOR_SYSTEM_PROMPT_PAPER`` (swarm-paper): paper-faithful —
-  Orchestrator gets direct ``search``/``access`` plus the subagent
+- ``ORCHESTRATOR_SYSTEM_PROMPT_PAPER`` (swarm-paper): paper-faithful;
+  the Orchestrator gets direct ``search``/``access`` plus the subagent
   tools. No hand-coded heuristic about when to delegate vs call
   directly; the reward (r_parallel / r_finish) plus the critical_steps
   rollout budget is expected to shape that trade-off during training.
@@ -42,7 +42,7 @@ ORCHESTRATOR_SYSTEM_PROMPT = (
     "- `create_subagent`: Register a sub-agent with a unique name and a clear, "
     "specific system prompt describing its role and scope. Sub-agents inherit "
     "`search` and `access` over the local knowledge base and run their own ReAct "
-    "loop — you do not need to describe the workflow or tools in the prompt you "
+    "loop; you do not need to describe the workflow or tools in the prompt you "
     "register. The registry holds up to 8 unique names; re-registering an existing "
     "name replaces its system prompt in place and does not count against the cap.\n"
     "- `assign_task`: Delegate a task to a created sub-agent. You can emit multiple "
@@ -54,7 +54,7 @@ ORCHESTRATOR_SYSTEM_PROMPT = (
     "multiple sub-agents in parallel when one sub-agent would exceed them.\n\n"
     "# Context Isolation\n"
     "Sub-agents do not share your context. They see only the `system_prompt` you "
-    "register and the `prompt` you pass to `assign_task` — include any URLs, prior "
+    "register and the `prompt` you pass to `assign_task`; include any URLs, prior "
     "findings, or specific columns/fields they need in those fields. When a "
     "sub-agent finishes, you receive only the content of its `<result>\u2026</result>` "
     "block; the harness strips everything else."
@@ -77,7 +77,7 @@ ORCHESTRATOR_SYSTEM_PROMPT_PAPER = (
     "run in parallel.\n"
     "- `create_subagent`: Register a sub-agent with a unique name and a clear, "
     "specific system prompt describing its role and scope. Sub-agents inherit the "
-    "same `search` and `access` tools and run their own ReAct loop — you do not "
+    "same `search` and `access` tools and run their own ReAct loop; you do not "
     "need to describe the workflow or tools in the prompt you register. The "
     "registry holds up to 8 unique names; re-registering an existing name replaces "
     "its system prompt in place and does not count against the cap.\n"
@@ -90,7 +90,7 @@ ORCHESTRATOR_SYSTEM_PROMPT_PAPER = (
     "multiple sub-agents in parallel when one sub-agent would exceed them.\n\n"
     "# Context Isolation\n"
     "Sub-agents do not share your context. They see only the `system_prompt` you "
-    "register and the `prompt` you pass to `assign_task` — include any URLs, prior "
+    "register and the `prompt` you pass to `assign_task`; include any URLs, prior "
     "findings, or specific columns/fields they need in those fields. When a "
     "sub-agent finishes, you receive only the content of its `<result>\u2026</result>` "
     "block; the harness strips everything else."

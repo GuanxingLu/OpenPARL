@@ -1,7 +1,7 @@
 # OpenPARL
 
 **Research reproduction of Kimi K2.5 Agent Swarm (PARL) on WideSearch.**
-arXiv:2602.02276 — *"Kimi K2.5: Visual Agentic Intelligence"* (Kimi Team, 2026).
+arXiv:2602.02276, *"Kimi K2.5: Visual Agentic Intelligence"* (Kimi Team, 2026).
 
 > OpenPARL is an independent reproduction, **not** an official Kimi /
 > Moonshot product. No endorsement by the paper authors is implied.

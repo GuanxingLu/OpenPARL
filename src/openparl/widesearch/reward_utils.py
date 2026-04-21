@@ -46,7 +46,7 @@ def _norm_column(s: str) -> str:
 def _norm_cell(s: str) -> str:
     """Strip + lowercase + drop surrounding punctuation for cell comparison.
 
-    Kept simple on purpose — too aggressive a normalization (e.g. stripping
+    Kept simple on purpose: too aggressive a normalization (e.g. stripping
     all punctuation) would collapse semantically distinct values like
     "2020" vs "$2020". Instead we only strip trailing punctuation and
     collapse internal whitespace.
@@ -94,7 +94,7 @@ def _cell_set(s: str) -> frozenset[str]:
     """Split on ``<br>`` / newline, normalize each piece, return frozen set.
 
     Single-value cells become 1-element sets (so set equality still works in
-    the plain case). Empty / whitespace-only fragments are dropped — this
+    the plain case). Empty / whitespace-only fragments are dropped; this
     intentionally treats ``"A"`` and ``"A\\n"`` as the same multi-value cell.
     """
     if not s:
@@ -128,7 +128,7 @@ def cell_equal(pred: str, gt: str) -> bool:
     if pred_url is not None and gt_url is not None:
         return pred_url == gt_url
     if pred_url is not None or gt_url is not None:
-        # One side is a URL, the other isn't — they can't match meaningfully.
+        # One side is a URL, the other isn't, so they can't match meaningfully.
         # Fall through to set compare anyway; will return False unless the
         # non-URL text happens to contain the exact same string, which is
         # fine (edge case, very low probability).
@@ -195,7 +195,7 @@ def _row_key(row: dict[str, str], unique_cols: list[str]) -> tuple[str, ...]:
 def _index_rows_by_key(rows: list[dict[str, str]], unique_cols: list[str]) -> dict[tuple[str, ...], dict[str, str]]:
     """Dedup rows on ``unique_cols`` row-key (last-wins) and index by key.
 
-    Rows whose entire key projection is empty are dropped — markdown parse
+    Rows whose entire key projection is empty are dropped; markdown parse
     occasionally picks up blank/filler rows which would otherwise collide on
     the empty key and poison the join.
     """
@@ -222,12 +222,12 @@ def item_f1_from_markdown(
     cols; recall denominator is all GT rows × required cols, so over- and
     under-generation are both penalized.
 
-    ``required_columns`` defaults to the full GT header when None — matches
+    ``required_columns`` defaults to the full GT header when None; matches
     the widesearch source ``evaluation.required`` when prepare_data emits it,
     gracefully falls back otherwise.
 
     Returns 0.0 on any parse failure (no table, missing columns, empty join)
-    instead of raising — bad formatting must not crash a training step.
+    instead of raising; bad formatting must not crash a training step.
     """
     if not unique_columns:
         return 0.0
@@ -242,7 +242,7 @@ def item_f1_from_markdown(
     if required_columns:
         rc = [_norm_column(c) for c in required_columns]
         if not set(rc).issubset(gt[0].keys()):
-            # GT doesn't actually have all declared required columns —
+            # GT doesn't actually have all declared required columns.
             # prepare_data bug or schema drift. Degrade to GT header.
             rc = list(gt[0].keys())
     else:
@@ -284,7 +284,7 @@ def row_f1_from_markdown(
     answer: str,
     unique_columns: list[str] | tuple[str, ...],
 ) -> float:
-    """Paper's "Row F1" metric — set-F1 over the ``unique_columns`` row-key.
+    """Paper's "Row F1" metric: set-F1 over the ``unique_columns`` row-key.
 
     Retained as a side-metric alongside ``item_f1_from_markdown`` so eval
     reporting can mirror the paper's table 1b (Row F1 Avg@N / Max@N). Row-F1
@@ -392,7 +392,7 @@ def cover_em_score(response: str, answer: str | list[str]) -> float:
 
     Matches the Search-R1 / FlashRAG community convention used to score
     open-domain QA benchmarks (NQ / TriviaQA / HotpotQA / 2Wiki / Bamboogle /
-    MuSiQue / PopQA). More lenient than strict EM — a prediction that wraps
+    MuSiQue / PopQA). More lenient than strict EM: a prediction that wraps
     the answer in extra context ("former president Barack Obama" vs
     "Barack Obama") still scores. Prediction shorter than GT never scores.
     """

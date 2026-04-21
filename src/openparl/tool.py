@@ -13,13 +13,13 @@ import re
 
 MAX_REGISTRY_SIZE = 8
 
-# Appended to every subagent's system prompt — orchestrator receives only the <result>...</result> block.
+# Appended to every subagent's system prompt; orchestrator receives only the <result>...</result> block.
 SUBAGENT_OUTPUT_SUFFIX = (
     "\n\n# Output Format\n"
     "After completing your work, you MUST wrap your final answer or key "
     "findings in a <result>…</result> block at the end of your response. "
     "The orchestrator will ONLY see the content inside <result>…</result>. "
-    "Put all essential information there — anything outside will be discarded."
+    "Put all essential information there; anything outside will be discarded."
 )
 
 _RESULT_RE = re.compile(r"<result>(.*?)</result>", re.DOTALL)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PARL v2 widesearch run — paper-faithful swarm (Arm B).
+# PARL v2 widesearch run: paper-faithful swarm (Arm B).
 #
 # Orchestrator gets direct search/access in addition to create_subagent /
 # assign_task. Frozen-subagent topology and everything else matches

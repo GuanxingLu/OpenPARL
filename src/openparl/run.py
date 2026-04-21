@@ -74,9 +74,9 @@ class ScriptArgs(U.ExecuteTrainConfig):
     sglang_config: str = ""
     # Orchestrator tool surface (see BLOG):
     #                     direct tools   subagent tools
-    #   single-agent  —        ✓               ✗        (Single)
-    #   swarm         —        ✗               ✓        (Delegate-only / swarm-strict)
-    #   swarm-paper   —        ✓               ✓        (PARL)
+    #   single-agent           ✓               ✗        (Single)
+    #   swarm                  ✗               ✓        (Delegate-only / swarm-strict)
+    #   swarm-paper            ✓               ✓        (PARL)
     agent_mode: Literal["swarm", "swarm-paper", "single-agent"] = "swarm"
     extra_args: str = ""
 

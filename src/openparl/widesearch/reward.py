@@ -58,7 +58,7 @@ def _decode_label(label: str | None) -> tuple[str, list[str] | None, list[str] |
 
     prepare_data.py writes every row's label as ``json.dumps({"answer": ...,
     "unique_columns": ... | None, "required_columns": ... | None})``. The
-    ``required_columns`` field is optional — older ``.miles.jsonl`` files
+    ``required_columns`` field is optional; older ``.miles.jsonl`` files
     produced before the item-F1 upgrade don't carry it, in which case
     ``item_f1_from_markdown`` defaults to the full GT header. Malformed
     labels fall back to ``(string, None, None)`` so EM still works.
@@ -86,7 +86,7 @@ def _score_one(args, sample: Sample, lam1: float, lam2: float) -> dict:
     eval_metrics = compute_eval_metrics(response, answer, unique_columns, required_columns)
     # r_perf stays on the same metric as before bbe13569's item-F1 upgrade:
     # item_f1 on widesearch, strict em on QA. The extra cover_em / token_f1 /
-    # row_f1 / is_success live only in metadata for eval reporting — training
+    # row_f1 / is_success live only in metadata for eval reporting; training
     # signal is unchanged so checkpoints remain compatible.
     r_perf = eval_metrics["item_f1"] if unique_columns else eval_metrics["em"]
 

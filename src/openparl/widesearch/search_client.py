@@ -11,7 +11,7 @@ The server is the one launched by
 
 Everything returned to the subagent is a single plain string (formatted
 markdown for /retrieve, char-truncated body for /access). Failures are
-swallowed and surface as a textual ``"No ... found"`` string — subagents
+swallowed and surface as a textual ``"No ... found"`` string, so subagents
 can keep working across intermittent RAG-server hiccups without the
 whole rollout dying.
 """

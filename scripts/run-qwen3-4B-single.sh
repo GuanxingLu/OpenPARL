@@ -2,7 +2,7 @@
 
 # PARL v2 widesearch single-agent baseline (Arm C).
 #
-# Orchestrator holds ONLY direct search/access — no create_subagent, no
+# Orchestrator holds ONLY direct search/access, no create_subagent, no
 # assign_task. This is the same training infra (reward, GRPO+TIS+icepop,
 # group-rm, optimizer, parallelism) as swarm-strict / swarm-paper, with
 # one variable flipped: subagent tools are gone. Fair baseline for the

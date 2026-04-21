@@ -34,7 +34,7 @@ file retains its original copyright header:
     # ...
 
 The full Apache-2.0 license text is reproduced in the repository root
-[`LICENSE`](../../LICENSE) file — which governs both OpenPARL's own code and
+[`LICENSE`](../../LICENSE) file, which governs both OpenPARL's own code and
 the vendored content in this directory (same license, no additional terms).
 
 The canonical upstream license is available at

@@ -84,7 +84,7 @@ async def call(params: dict, *, registry: dict[str, str], tokenizer, router_url:
       else the raw last-turn text (or an ``__SOLVER_ERROR__`` marker).
     - ``is_valid``: True iff the subagent (a) produced non-empty output,
       (b) wrapped it in a ``<result>`` block, and (c) used ``search`` or
-      ``access`` at least once. Untool'd answers are treated as invalid —
+      ``access`` at least once. Untool'd answers are treated as invalid:
       they correspond to the model hallucinating instead of researching.
     - ``sub_steps``: number of SGLang generation calls made (ReAct loop
       iterations). Feeds K2.5 critical-steps accounting upstream.

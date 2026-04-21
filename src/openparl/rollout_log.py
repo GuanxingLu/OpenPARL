@@ -14,7 +14,7 @@ from miles.utils import tracking_utils
 from miles.utils.iter_utils import group_by
 from miles.utils.metric_utils import compute_at_k_over_metrics, compute_rollout_step
 
-# Metric names that are 0/1 by construction — pass@k (binary gate on `== 1`)
+# Metric names that are 0/1 by construction; pass@k (binary gate on `== 1`)
 # is meaningful here. Continuous metrics (item_f1, row_f1, token_f1) only get
 # avg@N / max@N. See openparl/widesearch/reward_utils.compute_eval_metrics.
 _BINARY_EVAL_METRICS = frozenset({"em", "cover_em", "is_success"})
@@ -105,7 +105,7 @@ def _compute_reward_component_metrics(samples):
     for key in _REWARD_STAT_KEYS:
         log_dict |= _stats(_extract(samples, key), f"reward/{key}")
 
-    # Lambdas are step-level hyperparams — only log scalar mean.
+    # Lambdas are step-level hyperparams; only log scalar mean.
     for key in _REWARD_SCALAR_KEYS:
         vals = _extract(samples, key)
         if vals:
@@ -145,7 +145,7 @@ def _compute_multi_turn_metrics(args, samples):
     if any(v > 0 for v in per_turn_access):
         log_dict |= _stats(per_turn_access, "multi_turn/access_per_turn")
 
-    # Per-sample totals — useful to see "how much did this rollout search"
+    # Per-sample totals; useful to see "how much did this rollout search"
     # independent of turn count. Only emitted when non-trivial.
     n_search_total = _sample_field_totals(samples, "n_search")
     if any(v > 0 for v in n_search_total):
@@ -157,14 +157,14 @@ def _compute_multi_turn_metrics(args, samples):
     if any(v > 0 for v in n_access_total):
         log_dict |= _stats(n_access_total, "multi_turn/n_access_total")
 
-    # delegate_ratio — serial-collapse diagnostic for swarm-paper mode.
+    # delegate_ratio: serial-collapse diagnostic for swarm-paper mode.
     # Only meaningful when at least some direct-tool capability is present
     # (swarm-strict will always have ratio=1 since n_direct=0).
     delegate_ratios = _delegate_ratios(samples)
     if delegate_ratios and any(v > 0 for v in n_search_total + n_access_total):
         log_dict |= _stats(delegate_ratios, "multi_turn/delegate_ratio")
 
-    # turns_per_rollout — total orchestrator turns actually taken.
+    # turns_per_rollout: total orchestrator turns actually taken.
     turn_counts = [len((s.metadata or {}).get("turns") or []) for s in samples]
     if turn_counts:
         log_dict |= _stats(turn_counts, "multi_turn/turns_per_rollout")
@@ -177,7 +177,7 @@ def _compute_multi_turn_metrics(args, samples):
     if ratios:
         log_dict |= _stats(ratios, "multi_turn/effective_response_ratio")
 
-    # (n_unique_agents_used removed — identical to reward/registry_size/*.)
+    # (n_unique_agents_used removed; identical to reward/registry_size/*.)
 
     # GRPO within-group std: if this is ~0, dispatch gradients collapse.
     if args.advantage_estimator != "ppo":

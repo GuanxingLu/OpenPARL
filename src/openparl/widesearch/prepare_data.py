@@ -1,4 +1,4 @@
-"""Widesearch data preparation — label compaction, no downloads.
+"""Widesearch data preparation: label compaction, no downloads.
 
 Assumes the raw datasets are already on disk under ``DATA/`` (user fetched
 from HF separately). Produces per-file ``*.miles.jsonl`` siblings with:
