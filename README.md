@@ -15,7 +15,9 @@ A minimal, from-scratch reproduction of the K2.5 PARL recipe:
   SGLang engine.
 - **PARL** follows K2.5 Appendix E.8 literally. **Delegate-only** is a
 stricter-than-paper ablation that strips the direct-tool fallback to
-probe what happens when the Orchestrator must delegate.
+probe what happens when the Orchestrator *must* delegate.
+
+![subagent dynamics](docs/assets/subagent_dynamics.png)
 
 See [**BLOG.md**](BLOG.md) for the full write-up.
 
