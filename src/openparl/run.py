@@ -91,7 +91,9 @@ class ScriptArgs(U.ExecuteTrainConfig):
         self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/wideseek-r1-train/hybrid_20k.miles.jsonl"
         self.rollout_max_critical_steps = self.rollout_max_critical_steps or (2 * self.generate_max_turns)
         if not self.save_path:
-            self.save_path = f"{self.dev_repo_dir}/saves/{os.path.basename(self.hf_checkpoint)}-{self.agent_mode}/{self.run_id}"
+            self.save_path = (
+                f"{self.dev_repo_dir}/saves/{os.path.basename(self.hf_checkpoint)}-{self.agent_mode}/{self.run_id}"
+            )
 
 
 def _get_wandb_args(args: ScriptArgs) -> str:

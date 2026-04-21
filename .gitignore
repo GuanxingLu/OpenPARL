@@ -13,13 +13,12 @@ dist/
 wandb/
 outputs/
 saves/
+uv.lock
 *.log
 .DS_Store
 .idea/
 .vscode/
-
-# Local-only helper scripts (plot generation from wandb, ad-hoc analysis).
-tools/
-
-# Local-only working directory (settings, specs, session state).
 .claude/
+
+# Local-only helper
+tools/

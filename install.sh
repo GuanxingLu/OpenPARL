@@ -27,10 +27,5 @@ echo "[2/2] Installing OpenPARL in editable mode..."
 pip install -e "${HERE}"
 
 cat <<'EOF'
-
-OpenPARL installed. Next steps:
-  1. (Optional) Launch the local RAG server:
-       bash scripts/launch_rag_server.sh
-  2. Run the WideSearch training:
-       bash scripts/run-qwen3-4B-parl.sh
+OpenPARL installed.
 EOF
