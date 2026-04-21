@@ -52,20 +52,57 @@ docker run --gpus all -it --shm-size=32g --privileged \
 cd /workspace/OpenPARL && ./install.sh
 ```
 
-## Reproduce
+## Usage
+
+All commands run inside the miles container. Paths below assume `DATA_ROOT`
+and `MODEL_ROOT` — set them to wherever you've staged the assets (defaults
+to `./DATA` and `./MODEL` relative to the repo).
+
+### 1. Stage data and model weights
 
 ```bash
-# 1. One-off: build the *.miles.jsonl train/eval files.
+# Required assets (download / symlink into place).
+ls ${DATA_ROOT}/wiki-2018-corpus/{qdrant,wiki_corpus.jsonl,wiki_webpages.jsonl}
+ls ${DATA_ROOT}/wideseek-r1-train/hybrid_20k.miles.jsonl
+ls ${MODEL_ROOT}/{Qwen3-4B,Qwen3-4B_torch_dist,e5-base-v2}
+
+# If hybrid_20k.miles.jsonl is missing, rebuild the train/eval shards:
 python -m openparl.widesearch.prepare_data
-
-# 2. Launch the local RAG server (port 8000 by default).
-bash scripts/launch_rag_server.sh
-
-# 3. Pick a config.
-bash scripts/run-qwen3-4B-parl.sh           # PARL          (--agent-mode parl)
-bash scripts/run-qwen3-4B-delegate-only.sh  # Delegate-only (--agent-mode delegate-only)
-bash scripts/run-qwen3-4B-single.sh         # Single        (single-agent)
 ```
+
+### 2. Bring up the RAG stack (persistent, survives restarts)
+
+```bash
+pip install qdrant-client==1.16.2
+
+# Qdrant vector DB on :6333
+chmod +x ${DATA_ROOT}/wiki-2018-corpus/qdrant/qdrant  # one-time
+tmux new -d -s qdrant "cd ${DATA_ROOT}/wiki-2018-corpus/qdrant && ./qdrant"
+
+# E5 retrieval server on :8000 (or set PORT=... to avoid collisions)
+tmux new -d -s rag "PORT=8000 bash scripts/launch_rag_server.sh; exec bash"
+```
+
+Leave both tmux sessions running — they don't need to be restarted between
+training runs.
+
+### 3. Train
+
+```bash
+export OPENPARL_RAG_SERVER=localhost:8000    # must match the PORT above
+export WANDB_API_KEY=...                     # required
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  # one H200 node
+
+DATA_ROOT=/path/to/DATA \
+MODEL_ROOT=/path/to/MODEL \
+FLASHINFER_DISABLE_VERSION_CHECK=1 \
+bash scripts/run-qwen3-4B-parl.sh            # PARL          (--agent-mode parl)
+# or:
+bash scripts/run-qwen3-4B-delegate-only.sh   # Delegate-only (--agent-mode delegate-only)
+bash scripts/run-qwen3-4B-single.sh          # Single        (single-agent)
+```
+
+Checkpoints land under `saves/Qwen3-4B-<mode>/<RUN_ID>/`.
 
 ## RL Infra
 
