@@ -1,10 +1,10 @@
 """Orchestrator system prompts for the three agent modes.
 
-- ``ORCHESTRATOR_SYSTEM_PROMPT`` (delegate-only, ``--agent-mode swarm``):
+- ``ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY`` (``--agent-mode delegate-only``):
   only ``create_subagent`` / ``assign_task`` available, so the
   Orchestrator must delegate to touch any data. Baseline for isolating
   delegation behavior.
-- ``ORCHESTRATOR_SYSTEM_PROMPT_PAPER`` (PARL, ``--agent-mode swarm-paper``): paper-faithful;
+- ``ORCHESTRATOR_SYSTEM_PROMPT_PARL`` (``--agent-mode parl``): paper-faithful;
   the Orchestrator gets direct ``search``/``access`` plus the subagent
   tools. No hand-coded heuristic about when to delegate vs call
   directly; the reward (r_parallel / r_finish) plus the critical_steps
@@ -30,7 +30,7 @@ sync whenever ``tool.py`` or ``widesearch/assign_task.py`` changes.
 ``--orchestrator-prompt-path`` based on ``--agent-mode``.
 """
 
-ORCHESTRATOR_SYSTEM_PROMPT = (
+ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY = (
     "You are a professional and meticulous expert in information collection and "
     "organization. You fully understand user needs, skillfully use various tools, "
     "and complete tasks with the highest efficiency.\n\n"
@@ -62,7 +62,7 @@ ORCHESTRATOR_SYSTEM_PROMPT = (
 )
 
 
-ORCHESTRATOR_SYSTEM_PROMPT_PAPER = (
+ORCHESTRATOR_SYSTEM_PROMPT_PARL = (
     "You are a professional and meticulous expert in information collection and "
     "organization. You fully understand user needs, skillfully use various tools, "
     "and complete tasks with the highest efficiency.\n\n"

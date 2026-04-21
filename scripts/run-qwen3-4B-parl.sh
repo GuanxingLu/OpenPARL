@@ -116,7 +116,7 @@ ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus ${NUM_GPUS} \
 export RAY_ADDRESS="http://127.0.0.1:${RAY_DASHBOARD_PORT}"
 export MILES_SCRIPT_EXTERNAL_RAY=1
 
-# swarm-paper keeps the frozen-subagent topology: Orchestrator's direct
+# parl mode keeps the frozen-subagent topology: Orchestrator's direct
 # search/access hit the RAG server; its assign_task spawns still go to
 # the frozen-SGLang pool declared in sglang_config_4B.yaml.
 SUBAGENT_MODE=${SUBAGENT_MODE:-frozen}
@@ -136,5 +136,5 @@ python -m openparl.run \
    ${DATA_ARGS[@]} \
    ${GENERATE_ARGS[@]} \
    "${SGLANG_EXTRA_ARGS[@]}" \
-   --agent-mode swarm-paper \
+   --agent-mode parl \
    --extra-args "${EVAL_EXTRA_ARGS[*]} ${PERF_ARGS[*]} ${OPTIM_OVERRIDE_ARGS[*]}"

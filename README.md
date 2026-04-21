@@ -20,8 +20,8 @@ Three launcher configurations along a single action-space axis:
 
 | Launcher | `--agent-mode` | Tools available | Blog label |
 |---|---|---|---|
-| `scripts/run-qwen3-4B-parl.sh`           | `swarm-paper` | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
-| `scripts/run-qwen3-4B-delegate-only.sh`  | `swarm`       | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
+| `scripts/run-qwen3-4B-parl.sh`           | `parl`           | search / browse / python **+** `create_subagent` / `assign_task` | **PARL** |
+| `scripts/run-qwen3-4B-delegate-only.sh`  | `delegate-only`  | `create_subagent` / `assign_task` **only** (no direct-tool fallback) | **Delegate-only** |
 | `scripts/run-qwen3-4B-single.sh`         | `single-agent` | search / browse / python **only** (no delegation) | **Single** |
 
 **PARL** follows K2.5 Appendix E.8 literally. **Delegate-only** is a
@@ -62,8 +62,8 @@ python -m openparl.widesearch.prepare_data
 bash scripts/launch_rag_server.sh
 
 # 3. Pick a config.
-bash scripts/run-qwen3-4B-parl.sh           # PARL          (swarm-paper)
-bash scripts/run-qwen3-4B-delegate-only.sh  # Delegate-only (swarm)
+bash scripts/run-qwen3-4B-parl.sh           # PARL          (--agent-mode parl)
+bash scripts/run-qwen3-4B-delegate-only.sh  # Delegate-only (--agent-mode delegate-only)
 bash scripts/run-qwen3-4B-single.sh         # Single        (single-agent)
 ```
 

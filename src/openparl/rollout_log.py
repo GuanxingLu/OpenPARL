@@ -85,7 +85,7 @@ def _delegate_ratios(samples):
     """Per-sample ``n_assign / (n_assign + n_direct)`` where
     ``n_direct = n_search + n_access``. Samples with no tool usage of any
     kind are skipped (no signal). This is the primary serial-collapse
-    diagnostic in swarm-paper mode: if the mean ratio drifts toward 0
+    diagnostic in parl mode: if the mean ratio drifts toward 0
     while r_perf still rises, the Orchestrator has learned to bypass
     delegation in favor of direct tools.
     """
@@ -136,7 +136,7 @@ def _compute_multi_turn_metrics(args, samples):
         log_dict |= _stats(per_turn_assigns, "multi_turn/assign_per_turn")
 
     # per-turn n_search / n_access distribution (direct-tool parallelism).
-    # Non-zero only in swarm-paper / single-agent modes (delegate-only
+    # Non-zero only in parl / single-agent modes (delegate-only
     # doesn't expose these tools to the Orchestrator).
     per_turn_search = _per_turn_field_counts(samples, "n_search")
     if any(v > 0 for v in per_turn_search):
@@ -157,7 +157,7 @@ def _compute_multi_turn_metrics(args, samples):
     if any(v > 0 for v in n_access_total):
         log_dict |= _stats(n_access_total, "multi_turn/n_access_total")
 
-    # delegate_ratio: serial-collapse diagnostic for swarm-paper mode.
+    # delegate_ratio: serial-collapse diagnostic for parl mode.
     # Only meaningful when at least some direct-tool capability is present
     # (delegate-only will always have ratio=1 since n_direct=0).
     delegate_ratios = _delegate_ratios(samples)

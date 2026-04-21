@@ -141,6 +141,7 @@ else
 fi
 
 python -m openparl.run \
+   --agent-mode delegate-only \
    ${MODEL_ARGS[@]} \
    ${RUN_ARGS[@]} \
    ${PARALLEL_ARGS[@]} \

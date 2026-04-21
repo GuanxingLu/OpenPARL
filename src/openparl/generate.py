@@ -25,7 +25,7 @@ from miles.utils.types import Sample
 from openai.types.chat import ChatCompletionMessageToolCall
 from sglang.srt.function_call.core_types import ToolCallItem
 
-from .prompts import ORCHESTRATOR_SYSTEM_PROMPT
+from .prompts import ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY
 from .tool import _create_subagent
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ async def generate(input: GenerateFnInput) -> GenerateFnOutput:
     args = input.args
     sample = deepcopy(input.sample)
 
-    orch_prompt = ORCHESTRATOR_SYSTEM_PROMPT
+    orch_prompt = ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY
     if getattr(args, "orchestrator_prompt_path", None):
         orch_prompt = load_function(args.orchestrator_prompt_path)
     sample.prompt = _with_system_prompt(sample.prompt, orch_prompt)
@@ -307,8 +307,8 @@ def _add_arguments(parser: argparse.ArgumentParser):
         default=None,
         help=(
             "Importable path to the Orchestrator system prompt string. Unset "
-            "= the delegate-only default in openparl.prompts. "
-            "PARL (swarm-paper) sets ORCHESTRATOR_SYSTEM_PROMPT_PAPER; "
+            "= ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY in openparl.prompts. "
+            "PARL sets ORCHESTRATOR_SYSTEM_PROMPT_PARL; "
             "single-agent baseline sets ORCHESTRATOR_SYSTEM_PROMPT_SINGLE."
         ),
     )

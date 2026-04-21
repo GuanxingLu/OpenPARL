@@ -75,9 +75,9 @@ class ScriptArgs(U.ExecuteTrainConfig):
     # Orchestrator tool surface (see BLOG):
     #                     direct tools   subagent tools
     #   single-agent           ✓               ✗        (Single)
-    #   swarm                  ✗               ✓        (Delegate-only)
-    #   swarm-paper            ✓               ✓        (PARL)
-    agent_mode: Literal["swarm", "swarm-paper", "single-agent"] = "swarm"
+    #   delegate-only          ✗               ✓        (Delegate-only)
+    #   parl                   ✓               ✓        (PARL)
+    agent_mode: Literal["delegate-only", "parl", "single-agent"] = "delegate-only"
     extra_args: str = ""
 
     def __post_init__(self):
@@ -91,29 +91,15 @@ class ScriptArgs(U.ExecuteTrainConfig):
         self.prompt_data = self.prompt_data or f"{self.dev_repo_dir}/DATA/wideseek-r1-train/hybrid_20k.miles.jsonl"
         self.rollout_max_critical_steps = self.rollout_max_critical_steps or (2 * self.generate_max_turns)
         if not self.save_path:
-            suffix_map = {
-                "swarm": "parl-v2",
-                "swarm-paper": "parl-v2-paper",
-                "single-agent": "baseline",
-            }
-            suffix = suffix_map[self.agent_mode]
-            self.save_path = f"{self.dev_repo_dir}/saves/{os.path.basename(self.hf_checkpoint)}-{suffix}/{self.run_id}"
-
-
-_WANDB_VARIANT_BY_MODE = {
-    "swarm": "parl-v2",
-    "swarm-paper": "parl-v2-paper",
-    "single-agent": "baseline",
-}
+            self.save_path = f"{self.dev_repo_dir}/saves/{os.path.basename(self.hf_checkpoint)}-{self.agent_mode}/{self.run_id}"
 
 
 def _get_wandb_args(args: ScriptArgs) -> str:
     WANDB_API_KEY = os.environ.get("WANDB_API_KEY", "")
-    variant = _WANDB_VARIANT_BY_MODE[args.agent_mode]
     return (
         "--use-wandb "
         f"--wandb-project {WANDB_PROJECT} "
-        f"--wandb-group {args.model}-{variant} "
+        f"--wandb-group {args.model}-{args.agent_mode} "
         f"--wandb-key {WANDB_API_KEY} "
     )
 
@@ -130,15 +116,15 @@ def prepare(args: ScriptArgs):
 
 
 _TOOL_SPECS_PATH = {
-    "swarm": "openparl.tool.tool_specs",
-    "swarm-paper": "openparl.widesearch.orchestrator_tools.tool_specs_swarm_paper",
+    "delegate-only": "openparl.tool.tool_specs",
+    "parl": "openparl.widesearch.orchestrator_tools.tool_specs_parl",
     "single-agent": "openparl.widesearch.orchestrator_tools.tool_specs_single",
 }
 
 _ORCHESTRATOR_PROMPT_PATH = {
-    # swarm: empty means generate.py falls back to ORCHESTRATOR_SYSTEM_PROMPT.
-    "swarm": "",
-    "swarm-paper": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_PAPER",
+    # delegate-only: empty → generate.py uses ORCHESTRATOR_SYSTEM_PROMPT_DELEGATE_ONLY.
+    "delegate-only": "",
+    "parl": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_PARL",
     "single-agent": "openparl.prompts.ORCHESTRATOR_SYSTEM_PROMPT_SINGLE",
 }
 
@@ -173,7 +159,7 @@ def execute(args: ScriptArgs):
     prompt_path = _ORCHESTRATOR_PROMPT_PATH[args.agent_mode]
     if prompt_path:
         custom_args += f"--orchestrator-prompt-path {prompt_path} "
-    if args.agent_mode in ("swarm-paper", "single-agent"):
+    if args.agent_mode in ("parl", "single-agent"):
         custom_args += f"--orchestrator-direct-tools-path {_DIRECT_TOOLS_DISPATCH} "
 
     rollout_args = (

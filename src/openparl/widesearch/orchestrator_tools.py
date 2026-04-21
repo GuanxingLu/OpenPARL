@@ -11,15 +11,15 @@ is context offloading (a Subagent's tool outputs stay in the Subagent's
 context, only ``<result>…</result>`` returns to the Orchestrator).
 
 Three tool-spec sets:
-  - ``tool_specs_swarm``       : [create_subagent, assign_task]
-                                 (current delegate-only default; forces
-                                 delegation by construction).
-  - ``tool_specs_swarm_paper`` : [create_subagent, assign_task,
-                                  search, access]
-                                 (paper-faithful; Orchestrator chooses
-                                 when to delegate vs direct-call).
-  - ``tool_specs_single``      : [search, access]
-                                 (single-agent baseline; no delegation).
+  - ``tool_specs_delegate_only`` : [create_subagent, assign_task]
+                                   (delegate-only default; forces
+                                   delegation by construction).
+  - ``tool_specs_parl``          : [create_subagent, assign_task,
+                                    search, access]
+                                   (PARL, paper-faithful; Orchestrator
+                                   chooses when to delegate vs direct-call).
+  - ``tool_specs_single``        : [search, access]
+                                   (single-agent baseline; no delegation).
 
 ``dispatch(name, params)`` is an ``(str, dict) -> str | None`` coroutine;
 returns the tool-response string, or ``None`` for any name this
@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import os
 
-from ..tool import tool_specs as _orch_swarm_tool_specs
+from ..tool import tool_specs as _subagent_only_tool_specs
 from . import search_client
 from .subagent_prompts import tool_specs as _search_access_tool_specs
 
@@ -42,8 +42,8 @@ DEFAULT_ACCESS_MAX_CHARS = 5000
 _RAG_SERVER_ENV = "OPENPARL_RAG_SERVER"
 _RAG_SERVER_DEFAULT = "localhost:8000"
 
-tool_specs_swarm = list(_orch_swarm_tool_specs)
-tool_specs_swarm_paper = list(_orch_swarm_tool_specs) + list(_search_access_tool_specs)
+tool_specs_delegate_only = list(_subagent_only_tool_specs)
+tool_specs_parl = list(_subagent_only_tool_specs) + list(_search_access_tool_specs)
 tool_specs_single = list(_search_access_tool_specs)
 
 

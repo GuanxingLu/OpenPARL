@@ -86,7 +86,7 @@ DATA_ARGS=(
 )
 
 GENERATE_ARGS=(
-   # Match swarm's critical-step budget as max_turns: same "wall-clock"
+   # Match parl/delegate-only's critical-step budget as max_turns: same "wall-clock"
    # scale on the x-axis of the Figure 8 analog.
    --generate-max-turns 48
 )
